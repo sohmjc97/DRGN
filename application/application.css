@@ -1,0 +1,234 @@
+.root {
+	-fx-font-family: "Constantia";
+	-fx-font-size: 18;
+}
+
+.jet-black {
+	-fx-background-color: #000000;
+}
+
+.mahogany {
+	-fx-background-color: #3F2B00;
+}
+
+
+
+.deep-red {
+	-fx-background-color: #750000;
+}
+.dark-rose{
+	-fx-background-color: #881313;
+}
+.pale-dark-red {
+	-fx-background-color: #812727;
+}
+.rose-red {
+	-fx-background-color: #B60000;
+}
+.red {
+	-fx-background-color: #B62323;
+}
+.pale-red {
+	-fx-background-color: #B13636; 
+}
+.blood-red {
+	-fx-background-color: #FF0000;
+}
+.deep_blush {
+	-fx-background-color: #FF3D3D;
+}
+.light_blush {
+	-fx-background-color: #FF7A7A;
+}
+
+
+
+.twilight {
+	-fx-background-color: #7500A1;
+}
+.intense-medium-purple {
+	-fx-background-color: #5000B3;
+}
+.intense-light-purple {
+	-fx-background-color: #AC42FE;
+}
+.moderate-dark-purple {
+	-fx-background-color: #7F299F;
+}
+.purple {
+	-fx-background-color: #A130CC; 
+}
+.moderate-light-purple {
+	-fx-background-color: #9000FF;
+}
+.pale-dark-purple {
+	-fx-background-color: #824699; 
+}
+.pale-medium-purple {
+	-fx-background-color: #A950CB;
+}
+.lilac {
+	-fx-background-color: #C67CFF;
+}
+
+
+
+.night-blue {
+	-fx-background-color: #000075
+}
+.intense-medium-blue {
+	-fx-background-color: #0000CB;
+}
+.intense-light-blue {
+	-fx-background-color: #0000FF;
+}
+.moderate-dark-blue {
+	-fx-background-color: #1E1E76;
+}
+.blue {
+	-fx-background-color: #2B2BC7; 
+}
+.moderate-light-blue {
+	-fx-background-color: #3C3CFF;
+}
+.pale-dark-blue {
+	-fx-background-color: #333373; 
+}
+.pale-medium-blue {
+	-fx-background-color: #5151C7;
+}
+.pale-light-blue {
+	-fx-background-color: #7070FF;
+}
+
+
+
+.evergreen {
+	-fx-background-color: #007500;
+}
+.intense-medium-green {
+	-fx-background-color: #00B500;
+}
+.intense-light-green {
+	-fx-background-color: #00FF00;
+}
+.moderate-dark-green {
+	-fx-background-color: #1A731A;
+}
+.green {
+	-fx-background-color: #2BBA2B; 
+}
+.moderate-light-green {
+	-fx-background-color: #3DFF3D;
+}
+.pale-dark-green {
+	-fx-background-color: #3F893F; 
+}
+.pale-medium-green {
+	-fx-background-color: #5CC95C;
+}
+.pale-light-green {
+	-fx-background-color: #74FF74;
+}
+
+
+
+.brass {
+	-fx-background-color: #B9B700;
+}
+.intense-medium-yellow {
+	-fx-background-color: #D8D600;
+}
+.intense-light-yellow {
+	-fx-background-color: #FFFD00;
+}
+.moderate-dark-yellow {
+	-fx-background-color: #BCBB33;
+}
+.yellow {
+	-fx-background-color: #DEDD3B; 
+}
+.moderate-light-yellow {
+	-fx-background-color: #D5D467;
+}
+.pale-dark-yellow {
+	-fx-background-color: #BAB955; 
+}
+.pale-medium-yellow {
+	-fx-background-color: #5CC95C;
+}
+.pale-light-yellow {
+	-fx-background-color: #FFFE7B;
+}
+
+
+
+.burnt-orange {
+	-fx-background-color: #C46500;
+}
+.intense-medium-orange {
+	-fx-background-color: #E37500;
+}
+.intense-light-orange {
+	-fx-background-color: #FF8300;
+}
+.moderate-dark-orange {
+	-fx-background-color: #D2812B;
+}
+.orange {
+	-fx-background-color: #EA8F2E; 
+}
+.moderate-light-orange {
+	-fx-background-color: #FF9C33;
+}
+.pale-dark-orange {
+	-fx-background-color: #CA8D4C; 
+}
+.pale-medium-orange {
+	-fx-background-color: #E49F56;
+}
+.pale-light-orange {
+	-fx-background-color: #FFB362;
+}
+
+
+
+.storm-gray {
+	-fx-background-color: #343434;
+}
+.intense-medium-gray {
+	-fx-background-color: #949494;
+}
+.intense-light-gray {
+	-fx-background-color: #B2B2B2;
+}
+.moderate-dark-gray {
+	-fx-background-color: #6D6D6D;
+}
+.gray {
+	-fx-background-color: #969696; 
+}
+.moderate-light-gray {
+	-fx-background-color: #B0B0B0;
+}
+.pale-dark-gray {
+	-fx-background-color: #C1C1C1; 
+}
+.pale-medium-gray {
+	-fx-background-color: #D5D5D5;
+}
+.pale-light-gray {
+	-fx-background-color: #E6E6E6;
+}
+
+
+.moon-shadow {
+	-fx-background-color: #F4F4F4;
+}
+.snow-white {
+	-fx-background-color: #FFFFFF;
+}
+
+.default {
+	-fx-background-color: #F1E5E5;
+}
