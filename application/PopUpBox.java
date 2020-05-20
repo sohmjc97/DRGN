@@ -1,6 +1,6 @@
 package application;
 
-import application.Dragon.GENDER;
+import application.Creature.Gender;
 import application.Skin.COLORS;
 import application.Skin.PIGMENTS;
 import application.Skin.SHADES;
@@ -71,7 +71,7 @@ public class PopUpBox {
 		
 	}
 	
-	public Dragon custom_build () {
+	public Dragon custom_build (Region region) {
 		
 		Stage alertWindow = new Stage(); 
 		window = alertWindow;
@@ -95,9 +95,9 @@ public class PopUpBox {
 
 		HBox gender_box = new HBox(10);
 		Label gender_label = new Label("Pick a gender: ");
-		ChoiceBox<Dragon.GENDER> gender_options = new ChoiceBox<Dragon.GENDER>(); 
-		gender_options.getItems().addAll(GENDER.FEMALE, GENDER.MALE);
-		gender_options.setValue(GENDER.MALE);
+		ChoiceBox<Gender> gender_options = new ChoiceBox<Gender>(); 
+		gender_options.getItems().addAll(Gender.FEMALE, Gender.MALE);
+		gender_options.setValue(Gender.MALE);
 		gender_box.getChildren().addAll(gender_label, gender_options);
 		
 		HBox skin_box = new HBox(10); 
@@ -186,7 +186,7 @@ public class PopUpBox {
 		Button yes = new Button("Continue");
 		GridPane.setConstraints(yes, 0, 0);
 		yes.setOnAction(e -> {
-			GENDER gender = gender_options.getValue();
+			Gender gender = gender_options.getValue();
 			Double atk = attack_options.getValue();
 			Double def = defense_options.getValue();
 			Double spd = speed_options.getValue();
@@ -196,7 +196,7 @@ public class PopUpBox {
 			String first_name = name_field.getText();
 			String last_name = last_name_field.getText();
 			Skin skin = new Skin(color_options.getValue(), shade_options.getValue(), pigment_options.getValue());
-			Dragon new_baby = new Dragon(skin, gender, atk, def, spd, aggr, immsys, lifespan, first_name, last_name);
+			Dragon new_baby = new Dragon(skin, gender, atk, def, spd, aggr, immsys, lifespan, first_name, last_name, region);
 			m_baby = new_baby; 
 			this.close(alertWindow);
 			});

@@ -1,11 +1,10 @@
 package application;
 	
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Random;
 
-import NewDnDClasses.Enemy;
-import application.Dragon.STAGE;
+import java.util.HashMap;
+
+import application.Region.Resources;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -18,67 +17,37 @@ import javafx.scene.control.TextArea;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
-
 
 public class Main extends Application {
 	
-	private static ArrayList<Dragon> dragons = new ArrayList<Dragon>(); 
-	private static Dragon selected = null; 
+	private static ArrayList<Creature> dragons = new ArrayList<Creature>(); 
+	private static ArrayList<Creature> prey = new ArrayList<Creature>(); 
+	private static ArrayList<Creature> predators = new ArrayList<Creature>(); 
+	public static ArrayList<Region> regions = new ArrayList<Region>();
+	private static Region starting_region = new Region("MyRegion"); 
+	private static Creature selected = null;
 	private static BorderPane root = new BorderPane();
-	private static TextArea center = new TextArea(); 
-	private static ListView<String> order_view = new ListView<String>(); 
-	private static Text population = new Text(Integer.toString(dragons.size()));
+	private static TextArea center_text = new TextArea(); 
+	private static ListView<String> dragon_order = new ListView<String>(); 
+	private static ListView<String> prey_order = new ListView<String>(); 
+	private static ListView<String> predator_order = new ListView<String>(); 
 	private static VBox bottom = new VBox(10);
-	private static VBox left = new VBox();
+	private static HBox left = new HBox(10);
 	private static HBox top = new HBox(10); 
 	private static VBox right = new VBox(10);
-	private static ArrayList<Dragon> eggs = new ArrayList<Dragon>();
-	private static int babies = 0; 
+	private static VBox center = new VBox(10);
 	private static Text env = new Text(); 
 	public static ArrayList<Virus> diseases = new ArrayList<Virus>();
+	private static Text total_population = new Text("0");
 	
 	@Override
 	public void start(Stage primaryStage) {
 		try {
 			
 			setup_bottom();
-			
-			center.setMinSize(200, 200);
-			//center.setWrapText(true);
-			root.setCenter(center);
-		
-			left.setMaxSize(150, 400);
-			left.getChildren().add(order_view);
-			left.setMinSize(150, 400);
-			order_view.setMinWidth(125);
-			
-			order_view.setOnMouseClicked(e -> {
-				ArrayList<Dragon> dead = new ArrayList<Dragon>();
-				String name = order_view.getSelectionModel().getSelectedItem();
-				if (dragons.isEmpty() & name == null) {}
-				else {
-					for (Dragon m: dragons) {
-						m.get_name();
-						if (name == m.get_name()) {
-							selected = m;
-							//System.out.println(m.get_name() + " has been selected.\n");
-							center.setText(selected.get_stats());
-						}
-						if (m.isDead()) {
-							dead.add(m);
-						}
-					}
-					for (Dragon d: dead) {
-						dragons.remove(d);
-						order_view.getItems().remove(d.get_name());
-					}
-					dead.clear();
-					population.setText(Integer.toString(dragons.size()));
-				}
-			});
-			
+			setup_left(); 
+			setup_center();
 			setup_top();
 			setup_right();
 
@@ -86,11 +55,13 @@ public class Main extends Application {
 			root.setTop(top);
 			root.setLeft(left);
 			root.setRight(right);
+			root.setCenter(center);;
 			BorderPane.setAlignment(root, Pos.CENTER);
-			Scene scene = new Scene(root,600,675);
+			Scene scene = new Scene(root, 1000,675);
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
 			primaryStage.show();
+			
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -98,6 +69,349 @@ public class Main extends Application {
 	
 	public static void main(String[] args) {
 		launch(args);
+	}
+	
+	private static void setup_left() {
+		
+		left.getChildren().add(prey_order);
+		left.getChildren().add(dragon_order);
+		left.getChildren().add(predator_order);
+		left.setMinSize(450, 500);
+		left.setMaxSize(450, 500);
+		dragon_order.setMinWidth(125);
+		prey_order.setMinWidth(125);
+		predator_order.setMinWidth(125);
+		
+		dragon_order.setOnMouseClicked(e -> {
+			ArrayList<Creature> dead = new ArrayList<Creature>();
+			String name = dragon_order.getSelectionModel().getSelectedItem();
+			if (dragons.isEmpty() & name == null) {}
+			else {
+				for (Creature m: dragons) {
+					m.get_name();
+					if (name == m.get_name()) {
+						selected = m;
+						//System.out.println(m.get_name() + " has been selected.\n");
+						center_text.setText(selected.get_stats());
+					}
+					if (m.isDead()) {
+						dead.add(m);
+					}
+				}
+				for (Creature d: dead) {
+					dragons.remove(d);
+					dragon_order.getItems().remove(d.get_name());
+				}
+				dead.clear();
+			}
+			update_orders();
+			dragon_order.getSelectionModel().select(name);
+			if(name != null) {
+				center_text.setText(selected.get_stats());
+			}
+		});
+		
+		prey_order.setOnMouseClicked(e -> {
+			
+			ArrayList<Creature> dead = new ArrayList<Creature>();
+			String name = prey_order.getSelectionModel().getSelectedItem();
+			if (prey.isEmpty() & name == null) {}
+			else {
+				for (Creature m: prey) {
+					m.get_name();
+					if (name == m.get_name()) {
+						selected = m;
+						center_text.setText(selected.get_stats());
+					}
+					if (m.isDead()) {
+						dead.add(m);
+					}
+				}
+				for (Creature d: dead) {
+					prey.remove(d);
+					prey_order.getItems().remove(d.get_name());
+				}
+				dead.clear();
+			}
+			update_orders();
+			prey_order.getSelectionModel().select(name);
+			if(name != null) {
+				center_text.setText(selected.get_stats());
+			}
+		});
+		
+		predator_order.setOnMouseClicked(e -> {
+			ArrayList<Creature> dead = new ArrayList<Creature>();
+			String name = predator_order.getSelectionModel().getSelectedItem();
+			if (predators.isEmpty() & name == null) {}
+			else {
+				for (Creature m: starting_region.get_predator_population()) {
+					m.get_name();
+					if (name == m.get_name()) {
+						selected = m;
+						center_text.setText(selected.get_stats());
+					}
+					if (m.isDead()) {
+						dead.add(m);
+					}
+				}
+				for (Creature d: dead) {
+					predators.remove(d);
+					predator_order.getItems().remove(d.get_name());
+				}
+				dead.clear();
+			}
+			update_orders();
+			predator_order.getSelectionModel().select(name);
+			if(name != null) {
+				center_text.setText(selected.get_stats());
+			}
+		});
+		
+		update_orders();
+		
+	}
+	
+	private static void setup_right() {
+		
+		Button add_legend = new Button("Add Legend");
+		add_legend.setOnAction(e -> {
+			if(selected != null) {
+				if(Dragon.class.isInstance(selected)) {
+					Dragon selected_dragon = (Dragon) selected; 
+					selected_dragon.add_to_legends();
+				}
+			}
+		});
+		
+		Button get_legends = new Button("Get Legends");
+		get_legends.setOnAction(e -> {
+			for (Dragon d: Dragon.get_legends()) {
+				System.out.println(d.get_stats() + "\n\n");
+			}
+		});
+		
+		Button infect = new Button("Infect");
+		infect.setOnAction(e-> {
+			if(selected != null) {
+				Virus novel = Virus.manual_infect(selected);
+				System.out.println(novel.get_stats());
+			}
+		});
+		
+		Button age = new Button("Age");
+		age.setOnAction(e -> {
+			if(selected != null) {
+				selected.run();
+				center_text.setText(selected.get_stats());
+			}
+		});
+		
+		right.getChildren().addAll(infect, age, add_legend, get_legends);
+		right.setAlignment(Pos.CENTER);
+		right.setPadding(new Insets(10, 10, 10, 10));
+		
+	}
+	
+	private static void setup_bottom() {
+		
+		regions.add(starting_region);
+		starting_region.randomize_env();
+		Skin env_skin = starting_region.get_environment_skin();
+		env.setText(env_skin.describe());
+		
+		Button randomize_env = new Button("Randomize");
+		randomize_env.setOnAction(e-> {
+			starting_region.randomize_env();
+			env.setText(starting_region.get_environment_skin().describe());
+		});
+		
+		ChoiceBox<Skin.COLORS> color_choice = new ChoiceBox<Skin.COLORS>();
+		for (Skin.COLORS i: Skin.COLORS.values()) {
+			color_choice.getItems().add(i);
+		}
+		color_choice.setValue(starting_region.get_env_color());
+		ChoiceBox<Skin.SHADES> shade_choice = new ChoiceBox<Skin.SHADES>();
+		for (Skin.SHADES s: Skin.SHADES.values()) {
+			shade_choice.getItems().add(s);
+		}
+		shade_choice.setValue(starting_region.get_env_shade());
+		ChoiceBox<Skin.PIGMENTS> pigment_choice = new ChoiceBox<Skin.PIGMENTS>();
+		for (Skin.PIGMENTS p: Skin.PIGMENTS.values()) {
+			pigment_choice.getItems().add(p);
+		}
+		pigment_choice.setValue(starting_region.get_env_pigment());
+		
+		Button set_choice = new Button("Set");
+		set_choice.setOnAction(e -> {
+			starting_region.set_environment_skin(color_choice.getValue(), shade_choice.getValue(), pigment_choice.getValue());
+			env.setText(starting_region.get_environment_skin().describe());
+		});
+		
+		HBox one = new HBox(10);
+		
+		HBox two = new HBox(10); 
+		one.setPadding(new Insets(10, 10, 10, 10));
+		one.setAlignment(Pos.CENTER);
+		one.getChildren().addAll(color_choice, shade_choice, pigment_choice, set_choice);
+		two.setPadding(new Insets(0, 10, 10, 10));
+		two.setAlignment(Pos.CENTER);
+		two.getChildren().addAll(env, randomize_env);
+		bottom.getChildren().addAll(one, two);
+		root.setBottom(bottom);
+		
+	}
+	
+	private static void setup_top() {
+		
+		Button custom = new Button("Custom");
+		custom.setOnAction(e-> {
+			custom_builder(); 
+		} );
+		
+		Button simulate = new Button("Simulate");
+		simulate.setOnAction(e-> {
+			starting_region.short_sim();
+			starting_region.disease_report(diseases);
+			dragons = starting_region.get_dragon_population();
+			prey = starting_region.get_prey_population();
+			predators = starting_region.get_predator_population();
+			Skin collective = Skin.collective_mix(Creature.population);
+			String label = collective.get_pigment() + " " + collective.get_shade() + " " + collective.get_color(); 
+			shift_color(label);
+			System.out.println(collective.describe());
+			System.out.println("dM: " + Dragon.get_male_pop() + " // dF: " + Dragon.get_female_pop());
+			HashMap<String, Integer> d_census = Creature.get_census(starting_region.get_dragon_population());
+			HashMap<String, Integer> p_census = Creature.get_census(starting_region.get_prey_population());
+			HashMap<String, Integer> f_census = Creature.get_census(starting_region.get_predator_population());
+			try {
+				System.out.println("Foliage Percentage: " + starting_region.get_resource_levels(Resources.PREY_FOOD)/10 + "%");
+				Statistics p_stat = new Statistics(prey);
+				Statistics d_stat = new Statistics(dragons);
+				Statistics f_stat = new Statistics(predators);
+			} catch(Exception g) {
+				System.out.println("Unable to gather population data.");
+			}
+			total_population.setText(Integer.toString(Creature.population.size()));
+			String feed = "PREY CENSUS: (" + starting_region.get_prey_population().size() + ") ";
+			for (String i: p_census.keySet()) {
+				feed += " // " + i + ": " + p_census.get(i);
+			}
+			feed += "\nDRAGON CENSUS: (" + starting_region.get_dragon_population().size() + ") ";
+			for (String i: d_census.keySet()) {
+				feed += " // " + i + ": " + d_census.get(i);
+			}
+			feed += "\nPREDATOR CENSUS: (" + starting_region.get_predator_population().size() + ") ";
+			for (String i: f_census.keySet()) {
+				feed += " // " + i + ": " + f_census.get(i);
+			}
+			System.out.println(feed);
+			update_orders(); 
+		});
+		
+		Button long_sim = new Button("Long Sim");
+		long_sim.setOnAction(e-> {
+			starting_region.long_sim(100);
+			update_orders(); 
+		});
+		
+		Button season = new Button("Season");
+		season.setOnAction(e-> {
+			Prey.season(starting_region.get_prey_population());
+			Dragon.season(starting_region.get_dragon_population());
+			Predator.season(starting_region.get_predator_population());
+			update_orders();
+		});
+		
+		Button spawn = new Button("Spawn");
+		spawn.setOnAction(e-> {
+			if(selected == null) {
+				Dragon d_spawn = starting_region.spawn_dragon();
+				dragons.add(d_spawn);
+				dragon_order.getItems().add(d_spawn.get_name());
+				Predator f_spawn = starting_region.spawn_predator();
+				predators.add(f_spawn);
+				predator_order.getItems().add(f_spawn.get_name());
+				Prey p_spawn = starting_region.spawn_prey();
+				prey.add(p_spawn);
+				prey_order.getItems().add(p_spawn.get_name());
+			}
+			else if (Dragon.class.isInstance(selected)) {
+				Dragon d_spawn = starting_region.spawn_dragon();
+				dragons.add(d_spawn);
+				dragon_order.getItems().add(d_spawn.get_name());
+			}
+			else if (Predator.class.isInstance(selected)) {
+				Predator f_spawn = starting_region.spawn_predator();
+				predators.add(f_spawn);
+				predator_order.getItems().add(f_spawn.get_name());
+			}
+			else if (Prey.class.isInstance(selected)) {
+				Prey p_spawn = starting_region.spawn_prey();
+				prey.add(p_spawn);
+				prey_order.getItems().add(p_spawn.get_name());
+			}
+		});
+		
+		top.setPadding(new Insets(10, 10, 10, 10));
+		top.setAlignment(Pos.CENTER);
+		top.getChildren().addAll(custom, spawn, season, simulate, long_sim, total_population);
+		
+	}
+	
+	private static void setup_center() {
+		center.setMinSize(200, 500);
+		center.getChildren().add(center_text);
+		center_text.setMinSize(200, 500);
+		center.setPadding(new Insets(0, 10, 0, 10));
+		root.setCenter(center);
+	}
+	
+	public static void update_orders() {
+		
+		//System.out.println("Updating orders.");
+		
+		dragons = starting_region.get_dragon_population();
+		prey = starting_region.get_prey_population();
+		predators = starting_region.get_predator_population();
+		
+		dragon_order.getItems().clear();
+		
+		for(Creature d: dragons) {
+			if(!d.isDead & !dragon_order.getItems().contains(d.get_name())) {
+				dragon_order.getItems().add(d.get_name());
+			}
+		}
+		
+		prey_order.getItems().clear();
+		
+		for (Creature p: prey) {
+			if(!p.isDead & !prey_order.getItems().contains(p.get_name())) {
+				prey_order.getItems().add(p.get_name());
+			}
+		}
+		
+		predator_order.getItems().clear();
+		
+		for(Creature f: predators) {
+			if(!f.isDead & !predator_order.getItems().contains(f.get_name())) {
+				predator_order.getItems().add(f.get_name());
+			}
+		}
+		
+		//System.out.println("Orders updated.");
+		
+	}
+	
+	private static void custom_builder() {
+		PopUpBox alert = new PopUpBox();
+		Dragon baby = alert.custom_build(starting_region);
+		if (alert.getStatus()) {
+			Stage alertWindow = alert.getWindow();
+			dragon_order.getItems().add(baby.get_name());
+			dragons.add(baby);
+			alert.killAlert(alertWindow);
+		}
 	}
 	
 	private static void shift_color(String color) {
@@ -360,54 +674,7 @@ public class Main extends Application {
 		//System.out.println(root.getStyleClass());
 	}
 	
-	private static void setup_bottom() {
-		
-		Dragon.randomize_env();
-		env.setText(Dragon.get_env_pigment() + " " + Dragon.get_env_shade() + " " + Dragon.get_env_color());
-		
-		Button randomize_env = new Button("Randomize");
-		randomize_env.setOnAction(e-> {
-			Dragon.randomize_env();
-			env.setText(Dragon.get_env_pigment() + " " + Dragon.get_env_shade() + " " + Dragon.get_env_color());
-		});
-		
-		ChoiceBox<Skin.COLORS> color_choice = new ChoiceBox<Skin.COLORS>();
-		for (Skin.COLORS i: Skin.COLORS.values()) {
-			color_choice.getItems().add(i);
-		}
-		color_choice.setValue(Dragon.get_env_color());
-		ChoiceBox<Skin.SHADES> shade_choice = new ChoiceBox<Skin.SHADES>();
-		for (Skin.SHADES s: Skin.SHADES.values()) {
-			shade_choice.getItems().add(s);
-		}
-		shade_choice.setValue(Dragon.get_env_shade());
-		ChoiceBox<Skin.PIGMENTS> pigment_choice = new ChoiceBox<Skin.PIGMENTS>();
-		for (Skin.PIGMENTS p: Skin.PIGMENTS.values()) {
-			pigment_choice.getItems().add(p);
-		}
-		pigment_choice.setValue(Dragon.get_env_pigment());
-		
-		Button set_choice = new Button("Set");
-		set_choice.setOnAction(e -> {
-			Dragon.set_env_color(color_choice.getValue());
-			Dragon.set_env_shade(shade_choice.getValue());
-			Dragon.set_env_pigment(pigment_choice.getValue());
-			env.setText(Dragon.get_env_pigment() + " " + Dragon.get_env_shade() + " " + Dragon.get_env_color());
-		});
-		
-		HBox one = new HBox(10);
-		
-		HBox two = new HBox(10); 
-		one.setPadding(new Insets(10, 10, 10, 10));
-		one.setAlignment(Pos.CENTER);
-		one.getChildren().addAll(color_choice, shade_choice, pigment_choice, set_choice);
-		two.setPadding(new Insets(0, 10, 10, 10));
-		two.setAlignment(Pos.CENTER);
-		two.getChildren().addAll(env, randomize_env);
-		bottom.getChildren().addAll(one, two);
-		root.setBottom(bottom);
-		
-	}
+	/*
 	
 	private static void setup_right() {
 		
@@ -421,30 +688,6 @@ public class Main extends Application {
 			}
 		});
 		rename.setDisable(true);
-		
-		Button add_legend = new Button("Add Legend");
-		add_legend.setOnAction(e -> {
-			selected.add_to_legends();
-		});
-		
-		Button get_legends = new Button("Get Legends");
-		get_legends.setOnAction(e -> {
-			for (Dragon d: Dragon.get_legends()) {
-				System.out.println(d.get_stats() + "\n\n");
-			}
-		});
-		
-		Button infect = new Button("Infect");
-		infect.setOnAction(e-> {
-			Virus novel = Virus.manual_infect(selected);
-			System.out.println(novel.get_stats());
-		});
-		
-		Button age = new Button("Age");
-		age.setOnAction(e -> {
-			selected.run();
-			center.setText(selected.get_stats());
-		});
 		
 		Button scavenge = new Button("Scavenge");
 		scavenge.setOnAction(e -> {
@@ -511,64 +754,9 @@ public class Main extends Application {
 			}
 		});
 		
-		right.getChildren().addAll(rename, infect, age, scavenge, hunt, be_hunted, drink, rest, lay_egg, add_legend, get_legends);
-		right.setAlignment(Pos.CENTER);
-		right.setPadding(new Insets(10, 10, 10, 10));
-		
-	}
-	
-	private static String disease_report() {
-		
-		//System.out.println("Reporting");
-		String report = "DISEASE REPORT\n";
-		report += "Recurrent Infections: ";
-		for (Virus i: Virus.get_recurrent_infections()) {
-			report += "#" + i.get_id() + ", ";
-		}
-		report += "\n";
-		ArrayList<Virus> eradicated = new ArrayList<Virus>();
-		int count = 0;
-		for (Virus e: diseases) {
-			//System.out.println("Checking " + e.get_id());
-			if (e.get_current_infected() == 0) {
-				//System.out.println(e.get_id() + " has died out.");
-				report = report + e.get_id() + " is inactive. \n";
-				eradicated.add(e);
-			}
-			else {
-				//System.out.println("Adding " + e.get_id() + " to report.");
-				report = report + e.get_stats();
-				count++;
-			}
-		}
-		//System.out.println("Exit disease loop.");
-		for (Virus e: eradicated) {
-			diseases.remove(e);
-		}
-		eradicated.clear();
-		//System.out.println("End Report");
-		report = report + count + " active viruses.\n";
-		return report; 
-		
-	}
-	
-	private static void custom_builder() {
-		PopUpBox alert = new PopUpBox();
-		Dragon baby = alert.custom_build();
-		if (alert.getStatus()) {
-			Stage alertWindow = alert.getWindow();
-			order_view.getItems().add(baby.get_name());
-			dragons.add(baby);
-			alert.killAlert(alertWindow);
-		}
 	}
 	
 	private static void setup_top() {
-		
-		Button custom = new Button("Custom");
-		custom.setOnAction(e-> {
-			custom_builder(); 
-		} );
 		
 		Button spawn = new Button("Spawn");
 		spawn.setOnAction(e -> {
@@ -809,24 +997,6 @@ public class Main extends Application {
 								System.out.println(d.get_name() + " wins the heart of " + m.get_name() + " with a score of " + wins.get(d) + "w/l" + losses.get(d));
 								matches.add(m);
 							}
-							/*else if(match_ups.isEmpty() | limit < 4) {
-								Dragon baby = d.reproduce(m);
-								eggs.add(baby);
-								order_view.getItems().add(baby.get_name());
-								limit++;
-							}
-							/*if (d.get_immune_sys() > m.get_immune_sys()) {
-								Dragon baby = d.reproduce(m);
-								eggs.add(baby);
-								order_view.getItems().add(baby.get_name());
-							}
-							int count = 0; 
-							while (count < d.compare_immunities(m)) {
-								Dragon baby = d.reproduce(m);
-								eggs.add(baby);
-								order_view.getItems().add(baby.get_name());
-								count++;
-							}*/
 						}
 						else if ((d.is_related(m))) {
 							//System.out.println(d.get_name() + " and " + m.get_name() + " are family.");
@@ -914,41 +1084,6 @@ public class Main extends Application {
 		top.setAlignment(Pos.CENTER);
 		top.getChildren().addAll(custom, spawn,season, simulate, long_sim, population);
 		
-	}
-	
-	public static HashMap<String, Integer> get_census() {
-		
-		HashMap<String, Integer> census = new HashMap<String, Integer>();
-		
-		for (STAGE s: Dragon.STAGE.values()) {
-			census.put(s.toString(), 0);
-		}
-		
-		for (Dragon d: dragons) {
-			int current = census.get(d.get_stage().toString());
-			census.put(d.get_stage().toString(), current + 1);
-		}
-		
-		return census;
-		
-	}
-	
-	
-	public static ArrayList<Dragon> find_potential(Dragon dragon) {
-		
-		ArrayList<Dragon> potential = new ArrayList<Dragon>(); 
-		
-		for (Dragon d: dragons) {
-			if (d.get_stage() == STAGE.ADULT) {
-				if (!dragon.is_related(d) & !dragon.get_immediate_family(dragons).contains(d) & dragon.get_gender() != d.get_gender()) {
-					potential.add(d);
-				}
-			}
-		}
-		
-		return potential; 
-		
-	}
-	
+	} */
 	
 }

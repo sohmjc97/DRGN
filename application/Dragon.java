@@ -4,125 +4,80 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
+import application.Creature.Stage;
+import application.Region.Resources;
 import application.Skin.COLORS;
 import application.Skin.PIGMENTS;
 import application.Skin.SHADES;
 
-public class Dragon {
+public class Dragon extends Creature {
 	
 	private static int drgn_count = 0; 
-	private static double growth_rate = 0.1; 
-	private static Skin.COLORS env_color = Skin.COLORS.WHITE;
-	private static Skin.SHADES env_shade = Skin.SHADES.LIGHT;
-	private static Skin.PIGMENTS env_pigment = Skin.PIGMENTS.PALE;
-	private static ArrayList<Dragon> population = new ArrayList<Dragon>();
+	private static ArrayList<Creature> dragon_population = new ArrayList<Creature>();
 	private static int male_pop = 0;
 	private static int female_pop = 0; 
 	private static ArrayList<Dragon> legends = new ArrayList<Dragon>();
-	
-	private static enum SPECIES {
-		WYVERN, 
-		QUADREN, 
-		SERPENT
-	}
-	private static enum ELEMENT {
-		WATER,
-		FIRE,
-		AIR,
-		EARTH
-	}
-	public static enum GENDER {
-		MALE,
-		FEMALE
-	}
-	
-	public static enum STAGE {
-		EGG, 
-		HATCHLING, 
-		ADOLESCENT,
-		ADULT,
-		ELDER
-	}
-	
-	private final int id;
-	private final SPECIES species; 
-	private final ELEMENT element;
-	private final GENDER gender; 
-	private final Skin skin; 
-	private final Dragon parent_one; 
-	private final Dragon parent_two;
-	
-	private ArrayList<Dragon> ancestors = new ArrayList<Dragon>();
-	private ArrayList<Dragon> offspring = new ArrayList<Dragon>(); 
-	private ArrayList<Dragon> descendants = new ArrayList<Dragon>();
-	
-	private String name;
+
 	private String first_name = "";
 	private String last_name = ""; 
-	private STAGE stage; 
-	private boolean isDead = false;
 	
-	private double growth = 0; 
-	private int experience = 0; 
-	private int life_span = 35; 
-	
-	private double max_hp = 10.0; 
-	private double current_hp = 10.0;
-	
-	private double hunger = 100.0;
-	private double thirst = 100.0;
-	private double stamina = 100.0;
-	
-	private Double attack = 1.0;
-	private double attack_growth;
-	private Double defense = 1.0;
-	private double defense_growth;
-	private Double speed = 1.0; 
-	private double speed_growth;
-	private double aggression;
-	
-	ArrayList<Virus> infections = new ArrayList<Virus>();
-	ArrayList<Virus> immunities = new ArrayList<Virus>();
-	private double immune_sys;
-	private boolean visible;
-	private final int season_limit;
-	private int curr_season_count = 0; 
-	
-	public Dragon(Double avg, Skin new_skin, int avg_life) {
+	public Dragon(Double avg, Skin new_skin, int avg_life, Region region) {
+		Random rand = new Random();
 		drgn_count = drgn_count + 1;
 		id = drgn_count;
-		//name = "Dragon#" + id; 
 		first_name = new_skin.get_color().toString().toLowerCase();
 		last_name = "";
 		name = first_name + last_name + "#" + id; 
-		
-		//Name.rename(this);
-		
-		species = random_species(); 
-		element = random_element();
-		if (male_pop > female_pop) {
-			gender = GENDER.FEMALE;
+		this.current_region = region; 
+		my_class = Dragon.class;
+		int gender_code = current_region.gender_check(current_region.get_dragon_population());
+		if (gender_code == 1) {
+			gender = Gender.FEMALE;
 		} 
-		else if (female_pop > male_pop) {
-			gender = GENDER.MALE;
+		else if (gender_code == 2) {
+			gender = Gender.MALE;
 		}
 		else {
-			gender = random_gender();
+			gender = Creature.random_gender();
 		}
-		
-		if (gender == GENDER.FEMALE) {
+		if (gender == Gender.FEMALE) {
 			female_pop++;
-			season_limit = 12;
+			
+			if(Creature.get_avg_season_limit(region.get_dragon_population()) != 0) {
+				int avg_limit = Creature.get_avg_season_limit(region.get_dragon_population());
+				int coin_flip = rand.nextInt(3);
+				if (coin_flip == 0) {
+					season_limit = avg_limit - 2;
+				}
+				else if(coin_flip == 1) {
+					season_limit = avg_limit;
+				}
+				else {
+					season_limit = avg_limit + 2;
+				}
+				
+			}
+			else {
+				season_limit = rand.nextInt(18) + 1;
+			}
+			
 		}
 		else {
-			season_limit = 24;
+			season_limit = 144;
 			male_pop++;
 		}
 		
+		if(season_limit == 0) {
+			season_limit = 1;
+		}
+		
 		skin = new_skin;
+		if(avg_life == 0) {
+			avg_life = 35;
+		}
 		life_span = avg_life; 
 		stage = get_stage();
-		Random rand = new Random();
+		
 		attack_growth = rand.nextDouble()/3;
 		defense_growth = rand.nextDouble()/3;
 		speed_growth = rand.nextDouble()/3;
@@ -147,62 +102,71 @@ public class Dragon {
 		immune_sys = rand.nextDouble();
 		int flip = rand.nextInt(2);
 		if (flip == 1) {
-			if (!population.isEmpty()) {
-				if (get_avg_imm_sys(population) > this.get_immune_sys()) {
-					immune_sys = immune_sys + get_avg_imm_sys(population)/10;
+			if (!current_region.get_dragon_population().isEmpty()) {
+				if (get_avg_imm_sys(current_region.get_dragon_population()) > this.get_immune_sys()) {
+					immune_sys = immune_sys + get_avg_imm_sys(current_region.get_dragon_population())/10;
 				}
-				else if (get_avg_imm_sys(population) == this.get_immune_sys()) {
+				else if (get_avg_imm_sys(current_region.get_dragon_population()) == this.get_immune_sys()) {
 					//do nothing
 				}
 				else {
-					immune_sys = immune_sys - get_avg_imm_sys(population)/10;
+					immune_sys = immune_sys - get_avg_imm_sys(current_region.get_dragon_population())/10;
 				}
 			}
 		}
 		aggression = rand.nextDouble();
 		int flip2 = rand.nextInt(2);
 		if (flip2 == 1) {
-			if (!population.isEmpty()) {
-				if (get_avg_aggression(population) > this.get_aggression()) {
-					aggression = aggression + get_avg_aggression(population)/10;
+			if (!current_region.get_dragon_population().isEmpty()) {
+				if (get_avg_aggression(current_region.get_dragon_population()) > this.get_aggression()) {
+					aggression = aggression + get_avg_aggression(current_region.get_dragon_population())/10;
 				}
-				else if (get_avg_aggression(population)== this.get_aggression()) {
+				else if (get_avg_aggression(current_region.get_dragon_population())== this.get_aggression()) {
 					//do nothing
 				}
 				else {
-					aggression = aggression - get_avg_aggression(population)/10;
+					aggression = aggression - get_avg_aggression(current_region.get_dragon_population())/10;
 				}
 			}
 		}
 		parent_one = null; 
 		parent_two = null; 
 		population.add(this);
+		dragon_population.add(this);
+		current_region.get_dragon_population().add(this);
 	}
 	
 	/*
 	 * Custom Constructor
 	 */
-	public Dragon (Skin skin, GENDER gender, Double atk_g, Double def_g, Double spd_g, Double agg, Double imm, int span, String first_name, String last_name) {
+	public Dragon (Skin skin, Gender gender, Double atk_g, Double def_g, Double spd_g, Double agg, Double imm, int span, String first_name, String last_name, Region current_region) {
 		drgn_count = drgn_count + 1;
 		id = drgn_count;
 		this.first_name = first_name;
 		this.last_name = last_name; 
 		name = first_name + last_name + "#" + id; 
 		Name.addActiveName(first_name+last_name);
-		species = random_species(); 
-		element = random_element();
 		this.skin = skin; 
 		this.gender = gender; 
-		if (gender == GENDER.FEMALE) {
+		this.current_region = current_region; 
+		if (gender == Gender.FEMALE) {
 			female_pop++;
-			season_limit = 12;
+			if(Creature.get_avg_season_limit(current_region.get_dragon_population()) != 0) {
+				season_limit = Creature.get_avg_season_limit(current_region.get_dragon_population()); 
+			}
+			else {
+				season_limit = 12;
+			}
 		}
 		else {
-			season_limit = 24;
+			season_limit = 144;
 			male_pop++;
 		}
-		stage = get_stage();
 		
+		//season_limit = new Random().nextInt(18) + 1; 
+		
+		stage = get_stage();
+		my_class = Dragon.class;
 		this.defense_growth = def_g;
 		this.speed_growth = spd_g; 
 		this.attack_growth = atk_g; 
@@ -213,6 +177,8 @@ public class Dragon {
 		parent_one = null; 
 		parent_two = null; 
 		population.add(this);
+		dragon_population.add(this);
+		current_region.get_dragon_population().add(this);
 	}
 	
 	/*
@@ -223,13 +189,14 @@ public class Dragon {
 		drgn_count = drgn_count + 1;
 		id = drgn_count;
 		name = "Dragon#" + id; 
+		my_class = Dragon.class;
 		first_name = one.first_name;
 		last_name = one.last_name;
-		species = one.species; 
-		element = one.element;
 		gender = one.gender;
 		season_limit = one.season_limit;
-		if (gender == GENDER.FEMALE) {
+		my_class = Dragon.class;
+		this.current_region = one.current_region; 
+		if (gender == Gender.FEMALE) {
 			female_pop++;
 		}
 		else {
@@ -246,6 +213,8 @@ public class Dragon {
 		immune_sys = one.immune_sys;
 		life_span = one.life_span;
 		population.add(this);
+		dragon_population.add(this);
+		current_region.get_dragon_population().add(this);
 	}
 	
 	/*
@@ -253,36 +222,68 @@ public class Dragon {
 	 * Creates a baby dragon who inherits traits from its parents
 	 */
 	private Dragon(Dragon one, Dragon two, int code) {
+		Random rand = new Random();
 		drgn_count = drgn_count + 1;
 		id = drgn_count;
+		my_class = Dragon.class;
 		//name = "Dragon#" + id; 
 		first_name = two.first_name;
 		last_name = one.last_name; 
 		name = first_name + last_name + "#" + id; 
-		//Name.rename(one, two, this);
-		species = choose_species(one, two); 
-		element = choose_element(one, two);
-		if (code == 0) {
-			gender = GENDER.FEMALE;
-		}
-		else if (code == 1) {
-			gender = GENDER.MALE;
+		this.current_region = one.current_region; 
+		parent_one = one; 
+		parent_two = two;
+		int gender_code = current_region.gender_check(current_region.get_dragon_population());
+		if (gender_code == 1) {
+			gender = Gender.FEMALE;
+		} 
+		else if (gender_code == 2) {
+			gender = Gender.MALE;
 		}
 		else {
-			gender = random_gender();
+			gender = Creature.random_gender();
 		}
-		if (gender == GENDER.FEMALE) {
+		if (gender == Gender.FEMALE) {
 			female_pop++;
-			season_limit = 12;
+			if(parent_one.gender == Gender.FEMALE) {
+				//int diff = Math.abs(parent_one.season_limit - Creature.get_avg_season_limit(current_region.get_dragon_population()));
+				int flip = rand.nextInt(3);
+				if(flip == 1) {
+					season_limit = parent_one.get_season_limit() - 2; 
+				}
+				else if (flip == 2) {
+					season_limit = parent_one.get_season_limit();
+				}
+				else {
+					season_limit = parent_one.get_season_limit() + 2;
+				}
+			}
+			else {
+				//int diff = Math.abs(parent_two.season_limit - Creature.get_avg_season_limit(current_region.get_dragon_population()));
+				int flip = rand.nextInt(3);
+				if(flip == 1) {
+					season_limit = parent_two.get_season_limit() - 2; 
+				}
+				else if (flip == 2) {
+					season_limit = parent_two.get_season_limit();
+				}
+				else {
+					season_limit = parent_two.get_season_limit() + 2;
+				}
+			}
 		}
 		else {
 			male_pop++;
-			season_limit = 24;
+			season_limit = 144;
 		}
+		
+		if(season_limit == 0) {
+			season_limit = 1; 
+		}
+		
 		skin = new Skin(one.skin, two.skin);
 		stage = get_stage();
-		parent_one = one; 
-		parent_two = two;
+		
 		one.offspring.add(this);
 		two.offspring.add(this);
 		immunities.addAll(one.get_immunities());
@@ -293,26 +294,26 @@ public class Dragon {
 		}
 		experience = 0;
 		ancestors.add(one);
-		for (Dragon a: one.ancestors) {
+		for (Creature a: one.ancestors) {
 			if (!ancestors.contains(a)) {
 				ancestors.add(a);
 			}
 		}
 		ancestors.add(two);
-		for (Dragon e: two.ancestors) {
+		for (Creature e: two.ancestors) {
 			if (!ancestors.contains(e)) {
 				ancestors.add(e);
 			}
 		};
 		
-		for (Dragon d: ancestors) {
+		for (Creature d: ancestors) {
 			if (!d.descendants.contains(d)) {
 				d.descendants.add(this);
 			}
 		}
 		
 		//allow for random mutation
-		Random rand = new Random();
+	
 		int atkcoeff = rand.nextInt(3) ;
 		if (atkcoeff < 1) {
 			attack_growth = (one.attack_growth + two.attack_growth)/2 + .05;
@@ -378,8 +379,9 @@ public class Dragon {
 		else {
 			life_span = (one.life_span + two.life_span)/2 - 5; 
 		}
-		
 		population.add(this);
+		dragon_population.add(this);
+		current_region.get_dragon_population().add(this);
 	}
 	
 	/*
@@ -392,10 +394,11 @@ public class Dragon {
 	public Dragon reproduce(Dragon two) {
 		
 		try {
-			if (this.curr_season_count >= this.season_limit | two.curr_season_count >= two.season_limit) {
+			if (this.reachedSeasonLimit() | two.reachedSeasonLimit()) {
+				//System.out.println("One or more had reached their season limit.");
 				return null;
 			}
-			else if (gender != two.gender & get_immediate_family(population).contains(two) == false & stage == STAGE.ADULT & two.stage == STAGE.ADULT) {
+			else if (gender != two.gender & get_immediate_family(current_region.get_dragon_population()).contains(two) == false & stage == Stage.ADULT & two.stage == Stage.ADULT) {
 				System.out.println(name + " laid an egg with " + two.name);
 				Dragon baby = null;
 				if (male_pop > female_pop) {
@@ -421,22 +424,92 @@ public class Dragon {
 		}
 		
 	}
+
+	private Prey choose_prey() {
+		
+		Prey chosen = null;
+		ArrayList<Creature> easy_prey = new ArrayList<Creature>();
+		ArrayList<Creature> hard_prey = new ArrayList<Creature>();
+		for(Creature p: current_region.get_prey_population()) {
+			
+			if(!p.isDead) {
+
+				if(this.stage == Stage.HATCHLING) {
+					if(p.stage == Stage.EGG & !p.isWellProtected()) {
+						easy_prey.add(p);
+					}
+					else {
+						hard_prey.add(p);
+					}
+				}
+				else {
+					if (p.isVisiblyIll) {
+						easy_prey.add(p);
+					}
+					else if (p.get_stat_coeff() < this.get_stat_coeff()) {
+						easy_prey.add(p);
+					}
+					else if (p.isMinor() & !p.isWellProtected()) {
+						easy_prey.add(p);
+					}
+					else {
+						hard_prey.add(p);
+					}
+				}
+			}
+		}
+		
+		Random rand = new Random();
+		if(hard_prey.isEmpty() & easy_prey.isEmpty()) {
+			return null;
+		}
+		else if (hard_prey.isEmpty() & !easy_prey.isEmpty()) {
+			chosen = (Prey) easy_prey.get(rand.nextInt(easy_prey.size()));
+		}
+		else if (!hard_prey.isEmpty() & easy_prey.isEmpty()) {
+			chosen = (Prey) hard_prey.get(rand.nextInt(hard_prey.size()));
+		}
+		else if(isHealthy() & aggression > 0.5 | easy_prey.isEmpty()) {
+			chosen = (Prey) hard_prey.get(rand.nextInt(hard_prey.size()));
+		}
+		else {
+			chosen = (Prey) easy_prey.get(rand.nextInt(easy_prey.size()));
+		}
+		return chosen;
+	}
 	
 	/*
 	 * Considering all factors of This Dragon (Skin, Age, Experience, Growths, Health, family, etc...)combined with an element of chance, have the Dragon attempt to hunt got iys food. If it 
 	 * succeeds, it gains nourishment as well as experience. If it fails, it has exhausted itself for nothing. 
 	 */
+	@Override
 	public void hunt() {
-		//System.out.println(name + " is on the hunt.");
-		double chance = 10; 
-		if (population.size() > 15) {
-			chance = chance - population.size()/2; 
+		
+		Prey prey = choose_prey();
+		
+		if(prey == null) {
+			//System.out.println(name + " could find no prey to hunt.");
+			hunger = hunger - 10; 
+			stamina = stamina - 10;
+			thirst = thirst - 10; 
+			grow(); 
+			check_status();
+			famine = true; 
+			return; 
 		}
-		if (skin.get_color() == env_color) {
+		else {
+			famine = false; 
+		}
+		
+		//System.out.println(name + " begins to hunt " + prey.get_name());
+		double chance = 0;
+
+		//STEALTH
+		if (skin.get_color() == current_region.get_env_color()) {
 			chance += 10;
 		}
 		else {
-			int dist = skin.get_color_distance(env_color);
+			int dist = skin.get_color_distance(current_region.get_env_color());
 			if (dist == 1) {
 				chance += 2;
 			}
@@ -447,25 +520,27 @@ public class Dragon {
 				chance = chance - 5; 
 			}
 		}
-		if (skin.get_shade() == env_shade) {
+		if (skin.get_shade() == current_region.get_env_shade()) {
 			chance += 10;
 		}
 		else {
-			int dist = skin.get_shade_distance(env_shade);
+			int dist = skin.get_shade_distance(current_region.get_env_shade());
 			if(dist == 2) {
 				chance = chance - 5;
 			}
 		}
-		if (skin.get_pigment() == env_pigment) {
+		if (skin.get_pigment() == current_region.get_env_pigment()) {
 			chance += 10;
 		}
 		else {
-			int dist = skin.get_pigment_distance(env_pigment);
+			int dist = skin.get_pigment_distance(current_region.get_env_pigment());
 			if(dist == 2) {
 				chance = chance - 5;
 			}
 		}
-		if (this.stage == STAGE.HATCHLING | this.stage == STAGE.ADOLESCENT) {
+		
+		//FAMILY AID/ TEACHING
+		if (this.stage == Stage.HATCHLING | this.stage == Stage.ADOLESCENT) {
 			if (parent_one != null & parent_two != null) {
 				if (!parent_one.isDead) {
 					chance += (parent_one.experience)/parent_one.get_num_minor_offspring(); 
@@ -483,10 +558,14 @@ public class Dragon {
 			chance = chance + experience + (speed_growth + defense_growth + attack_growth)*10;
 	
 		}
-		chance += experience + speed + attack;
 		
-		for (Dragon e: this.ancestors) {
-			if(!e.isDead & e.get_stage() == STAGE.ELDER) {
+		chance += experience/2 + speed + defense + attack; 
+		chance = (int) (chance - (max_hp-current_hp)/10 - (100-stamina)/10 - (100-hunger)/10 - (100 - thirst)/10 + growth*.75);
+		chance += speed - prey.speed;
+		chance += attack - prey.defense;
+		
+		for (Creature e: this.ancestors) {
+			if(!e.isDead & e.get_stage() == Stage.ELDER) {
 				chance+=2; 
 			}
 		}
@@ -495,16 +574,52 @@ public class Dragon {
 			chance = chance - 5; 
 		}
 		
-		Random rand = new Random();
-		int seed = rand.nextInt(100) + 1;
-		if (chance >= seed) {
-			//System.out.println(name + " caught fresh prey.");
-			hunger = 100; 
-			experience++; 
+		if(prey.isAdult() & this.isAdult()) {
+			if(prey.get_aggression() > 0.5 & prey.attack > this.defense_growth) {
+				System.out.println(prey.get_name() + " attempts to defend themselves against (" + get_stage() + ") " + name);
+				prey.fight(this);
+				if(prey.isDead & !this.isDead) {
+					System.out.println(name + " caught and ate (" + prey.get_stage() + ") " + prey.get_name());
+					eat(prey);
+					experience++; 
+				}
+				else if (!prey.isDead & this.isDead) {
+					System.out.println(prey.get_name() + " stood its ground and killed (" + get_stage() + ") " + name);
+				}
+				else if (!prey.isDead & !this.isDead) {
+					System.out.println("Neither could kill the other, so the hunt continues.");
+				}
+				else {
+					System.out.println("The hunter and the prey killed each other.");
+				}
+			}
 		}
-		else {
-			//System.out.println(name + " failed to catch anything.");
-			hunger = hunger - 10; 
+		else if (prey.isMinor()) {
+			//their parents will attempt to protect them, if they are alive, healthy, and aggressive & by chance and number of minor children
+			prey.be_defended(this);
+		}
+		
+		if(this.isDead | this.isSatisfied()) {
+			return; 
+		}
+		
+		if(!prey.isDead) {
+			if((this.isHealthy() | this.aggression > 0.5)) {
+				int prey_chance = prey.be_hunted(this);
+				if (chance >= prey_chance | prey.isDead) {
+					eat(prey);
+					experience+= determine_experience(prey); 
+					prey.die();
+				}
+				else {
+					System.out.println(name + " failed to catch (" + prey.get_stage() + ") " + prey.get_name());
+					current_hp = current_hp - 10;
+					hunger = hunger - 10; 
+				}
+			}
+			else {
+				System.out.println(name + " gave up on hunting (" + prey.get_stage() + ") " + prey.get_name());
+			}
 		}
 		stamina = stamina - 20;
 		thirst = thirst - 20; 
@@ -512,21 +627,15 @@ public class Dragon {
 		check_status();
 	}
 	
-	public int hunt(Prey p) {
-		return 0;
-	}
-	
-	public void be_hunted() {
-		//System.out.println(name + " is being hunted by a predator.");
-		double chance = 40; 
-		if (population.size() > 15) {
-			chance = chance + population.size()/10; 
-		}
-		if (skin.get_color() == env_color) {
+	public int be_hunted(Predator hunter) {
+		double chance = 0; 
+		
+		//CAMO
+		if (skin.get_color() == current_region.get_env_color()) {
 			chance += 10;
 		}
 		else {
-			int dist = skin.get_color_distance(env_color);
+			int dist = skin.get_color_distance(current_region.get_env_color());
 			if (dist == 1) {
 				chance += 2;
 			}
@@ -537,25 +646,27 @@ public class Dragon {
 				chance = chance - 5; 
 			}
 		}
-		if (skin.get_shade() == env_shade) {
+		if (skin.get_shade() == current_region.get_env_shade()) {
 			chance += 10;
 		}
 		else {
-			int dist = skin.get_shade_distance(env_shade);
+			int dist = skin.get_shade_distance(current_region.get_env_shade());
 			if(dist == 2) {
 				chance = chance - 5;
 			}		
 		}
-		if (skin.get_pigment() == env_pigment) {
+		if (skin.get_pigment() == current_region.get_env_pigment()) {
 			chance += 10;
 		}
 		else {
-			int dist = skin.get_pigment_distance(env_pigment);
+			int dist = skin.get_pigment_distance(current_region.get_env_pigment());
 			if(dist == 2) {
 				chance = chance - 5;
 			}
 		}
-		if (this.stage == STAGE.EGG | this.stage == STAGE.HATCHLING | this.stage == STAGE.ADOLESCENT) {
+		
+		//FAMILY INTERVENTION / TEACHING
+		if (this.stage == Stage.EGG | this.stage == Stage.HATCHLING | this.stage == Stage.ADOLESCENT) {
 			if (parent_one != null & parent_two != null) {
 				if (!parent_one.isDead) {
 					chance += (parent_one.experience)/parent_one.get_num_minor_offspring(); 
@@ -577,92 +688,55 @@ public class Dragon {
 				chance = chance + experience + (get_stat_coeff())*10;
 			}
 		}
-		chance += experience/2 + speed + defense + attack; 
-		chance = chance - (max_hp-current_hp)/10 - (100-stamina)/10 - (100-hunger)/10 - (100 - thirst)/10 + growth*.75;
 		
-		for (Dragon e: this.ancestors) {
-			if(!e.isDead & e.get_stage() == STAGE.ELDER) {
+		for (Creature e: this.ancestors) {
+			if(!e.isDead & e.get_stage() == Stage.ELDER) {
 				chance+=2; 
 			}
 		}
+		
+		chance += experience/2 + speed + defense + attack; 
+		chance = chance - (max_hp-current_hp)/10 - (100-stamina)/10 - (100-hunger)/10 - (100 - thirst)/10 + growth*.75;
+		
+		//Compare Predator's speed and offense to Dragon's Speed and defense
+		chance += defense - hunter.attack; 
+		chance += speed - hunter.speed;
 		
 		for(Virus v: infections) {
 			chance = chance - 5; 
 		}
 		
-		Random rand = new Random();
-		int seed = rand.nextInt(100) + 1;
-		if (chance <= seed) {
-			//System.out.println(name + " was caught and killed by a predator.");
-			die();
-		}
-		else if (chance - 20 <= seed) {
-			//System.out.println(name + " was wounded by a predator, but managed to escape.");
-			current_hp = current_hp - 10; 
-			stamina = stamina - 20;
-			thirst = thirst - 20; 
-			hunger = hunger - 10; 
-			experience++;
-			grow();
-			check_status();
-		}
-		else {
-			//System.out.println(name + " evaded the predator.");
-			stamina = stamina - 20;
-			thirst = thirst - 10; 
-			hunger = hunger - 10; 
-			experience++;
-			grow();
-			check_status();
-		}
-		
-	}
-	
-	public void rest() {
-		
-		//System.out.println(name + " sleeps.");
-		heal();
+		stamina = stamina - 20;
+		thirst = thirst - 10; 
+		hunger = hunger - 10; 
+		experience += determine_experience(hunter);
 		grow();
-		stamina = 100;
-		hunger = hunger - 20;
-		thirst = thirst - 20; 
-		check_status();
 		
+		return (int) (chance);
 	}
 	
 	public void scavenge() {
 		
-		//System.out.println(name + " finds an old carcass to gnaw on.");
-		int chance = 100 - population.size(); 
+		int chance = (current_region.get_prey_population().size()/4)/current_region.get_dragon_population().size(); 
 		
-		if (chance < 0) {
-			hunger += 10;
-			if (hunger > 100) {
-				hunger = 100; 
+		if (chance <= 0) {
+			if(current_region.get_resource_levels(Resources.PREY_FOOD) <= 10) {
+				famine = true;
+				//System.out.println(name + " couldn't even find sticks to eat.");
+			}
+			else {
+				hunger += 7;
+				System.out.println(name + " finds nothing to eat, so they chew on some old bones.");
+				//current_region.deplete_resource(Resources.PREY_FOOD, 2);
 			}
 		}
 		else {
-			hunger += 50; 
-			if (hunger > 100) {
-				hunger = 100; 
-			}
+			hunger += 35; 
+			System.out.println(name + " finds a prey carcass to gnaw on.");
+			//current_region.deplete_resource(Resources.PREY_FOOD, 5);
 		}
 		
-		Random rand = new Random();
-		if(rand.nextInt(100) < 5) {
-			Virus.manual_infect(this);
-		}
 		
-		thirst = thirst - 10;
-		stamina = stamina - 10;
-		check_status();
-		
-	}
-	
-	public void drink() {
-		
-		//System.out.println(name + " takes a drink.");
-		//heal();
 		
 		Random rand = new Random();
 		if(rand.nextInt(100) < 5) {
@@ -670,217 +744,9 @@ public class Dragon {
 		}
 		
 		grow();
-		thirst = 100;
-		stamina = stamina - 10; 
-		hunger = hunger - 10;
+		thirst = thirst - 10;
+		stamina = stamina - 10;
 		check_status();
-		
-	}
-	
-	public void heal() {
-		
-		double regen = 5; 
-		regen += hunger/20 + thirst/20 + current_hp/20 + stamina/20;
-		current_hp += regen;
-		if (current_hp > max_hp) {
-			current_hp = max_hp;
-		}
-		//System.out.println(name + " has regained " + regen + "health. \n");
-	
-	}
-	
-	public void grow() {
-		
-		double new_growth = growth_rate; 
-		new_growth = growth_rate * (hunger/100 + thirst/100 + current_hp/100 + stamina/100);
-		growth += new_growth;
-		Random rand = new Random();
-		int chance = rand.nextInt(10) + 1;
-		switch(stage) {
-		case EGG:
-			break;
-		case HATCHLING:
-			chance = chance - 1; 
-			break;
-		case ADOLESCENT:
-			chance = chance - 2; 
-			break;
-		case ADULT:
-			chance = chance - 3; 
-			break;
-		case ELDER:
-			chance = 0;
-			break;
-		default:
-			break;
-		}
-		if (chance > 5) {
-			defense += defense_growth * (hunger/100 + thirst/100 + current_hp/100 + stamina/100); 
-			attack += attack_growth * (hunger/100 + thirst/100 + current_hp/100 + stamina/100);
-			speed += speed_growth * (hunger/100 + thirst/100 + current_hp/100 + stamina/100);
-		}
-		if(stage == STAGE.ELDER) {
-			defense = defense - defense_growth /(hunger/100 + thirst/100 + current_hp/100 + stamina/100); 
-			attack = attack - attack_growth /(hunger/100 + thirst/100 + current_hp/100 + stamina/100);
-			speed = speed - speed_growth /(hunger/100 + thirst/100 + current_hp/100 + stamina/100);
-			max_hp = max_hp - new_growth;
-			immune_sys = immune_sys - .01; 
-		}
-		else {
-			max_hp += new_growth*2;
-		}
-		stage = get_stage();
-	
-	}
-	
-	public Dragon fight(Dragon enemy) {
-		
-		//System.out.println(name + " and " + enemy.get_name() + " sqaure off.");
-		String feed = name + " vs. " + enemy.get_name(); 
-		double one_chance = 0;
-		double two_chance = 0; 
-		
-		//factor in growth 
-		
-		one_chance += this.growth;
-		two_chance += enemy.growth;
-		
-		//factor in each skill 
-		
-		one_chance += this.attack;
-		one_chance += this.defense;
-		one_chance += this.speed;
-		
-		two_chance += enemy.attack;
-		two_chance += enemy.defense;
-		two_chance += enemy.speed;
-		
-		//factor in experience 
-		
-		one_chance += this.experience;
-		two_chance += enemy.experience;
-		
-		//factor in health, hunger, thirst, and stamina 
-		one_chance = one_chance - (max_hp-current_hp) - (100-stamina) - (100-hunger) - (100 - thirst);
-		two_chance = two_chance - (enemy.max_hp-enemy.current_hp) - (100-enemy.stamina) - (100-enemy.hunger) - (100 - enemy.thirst);
-
-		//factor in some element of chance 
-		
-		for(Virus v: enemy.infections) {
-			two_chance = two_chance - 5; 
-		}
-		
-		for(Virus v: this.infections) {
-			one_chance = one_chance - 5;
-		}
-		
-		/*Random rand = new Random();
-		int coin_toss = rand.nextInt(2);
-		
-		if (coin_toss == 0) {
-			one_chance += one_chance/20;
-		}
-		else {
-			two_chance += two_chance/20; 
-		}*/
-		
-		Dragon winner = null; 
-		Dragon loser = null; 
-		
-		if (one_chance >= two_chance) {
-			winner = this; 
-			loser = enemy;
-		}
-		else {
-			winner = enemy; 
-			loser = this; 
-		}
-		
-		feed += " / " + winner.name + " triumphed over " + loser.get_name();
-		
-		winner.experience += 5; 
-		winner.current_hp = winner.current_hp - 10;
-		
-		winner.stamina = winner.stamina - 20;
-		winner.hunger = winner.hunger - 10; 
-		winner.thirst = winner.thirst - 10;
-		winner.check_status();
-		
-		loser.experience += 2; 
-		loser.current_hp = loser.current_hp - 30;
-		loser.stamina = loser.stamina - 30;
-		loser.hunger = loser.hunger - 20; 
-		loser.thirst = loser.thirst - 20; 
-		loser.check_status();
-		
-		//get infected from injuries sustained during battle
-		
-		if(!winner.isDead & winner.current_hp < winner.max_hp/2) {
-			Random rand = new Random();
-			if(rand.nextInt(100) < 5) {
-				Virus.manual_infect(winner);
-			}
-		}
-		
-		if(!loser.isDead & loser.current_hp < loser.max_hp/2) {
-			Random rand = new Random();
-			if(rand.nextInt(100) < 5) {
-				Virus.manual_infect(loser);
-			}
-		}
-		
-		if(winner.isDead & !loser.isDead) {
-			feed += " / " + winner.name + " but later died of their injuries.";
-			System.out.println("Although " + winner.name + " won the fight, they later died of their injuries, leaving " + loser.get_name() + " as the winner.");
-			winner = loser;
-		}
-		else if (loser.isDead & !winner.isDead) {
-			feed += " / " + winner.name + " killed " + loser.name;
-			//System.out.println(winner.name + " killed " + loser.get_name() + " in battle.");
-		}
-		else if (winner.isDead & loser.isDead) {
-			feed+= " / Killed each other in battle.";
-			//System.out.println("The dragons killed each other in battle.");
-			return null;
-		}
-		System.out.println(feed);
-		return winner; 
-		
-	}
-	
-	public void check_status() {
-		
-		if (current_hp > 0 & stamina > 0 & hunger > 0 & thirst > 0) {
-			//dragon lives
-			if (growth > life_span) {
-				//chance to die of old age 
-				Random rand = new Random();
-				int seed = rand.nextInt(100) + 1;
-				if (growth/10 > seed) {
-					for (Virus e: infections) {
-						e.remove_infected(this, false);
-					}
-					die(); 
-					return;
-				}
-			}
-		}
-		else {
-			//die from starvation, thirst, exhaustion, or injury
-			for (Virus e: infections) {
-				e.remove_infected(this, true);
-			}
-			die();
-			return;
-		}
-		
-		if (check_infection()) {
-			for (Virus e: infections) {
-				e.remove_infected(this, true);
-			}
-			this.infections.clear();
-			die();
-		}
 		
 	}
 	
@@ -949,190 +815,57 @@ public class Dragon {
 		
 	}
 	
+	@Override
 	public void die() {
 		//System.out.println(name + " has died. \n");
-		
-		ArrayList<Dragon> living_descendants = new ArrayList<Dragon>(); 
-		for (Dragon e: this.descendants) {
+		if(!isDead) {
+			ArrayList<Creature> living_descendants = new ArrayList<Creature>(); 
+			for (Creature e: this.descendants) {
+				
+				if (!e.isDead) {
+					living_descendants.add(e);
+				}
+				else {
+					living_descendants.remove(e);
+				}
+				
+			}
 			
-			if (!e.isDead) {
-				living_descendants.add(e);
+			if (growth >= 65) {
+				legends.add(this);
+			}
+			else if (experience >= 100 & living_descendants.size() > 0) {
+				legends.add(this);
+			}
+			
+			if(legends.contains(this)) {
+				Name.retire_name(first_name+last_name);
+			}
+			
+			for (Virus e: infections) {
+				e.remove_infected(this, false);
+			}
+			isDead = true;
+			current_hp = 0; 
+			population.remove(this);
+			dragon_population.remove(this);
+			current_region.get_dragon_population().remove(this);
+			Name.removeActiveName(this.first_name + this.last_name);
+			if (gender == Gender.FEMALE) {
+				female_pop = female_pop - 1;
 			}
 			else {
-				living_descendants.remove(e);
+				male_pop = male_pop - 1;
 			}
-			
+			current_region.replenish_resource(Resources.PREY_FOOD, (int)(this.growth));
 		}
-		
-		if (growth >= 65) {
-			legends.add(this);
-		}
-		else if (experience >= 100 & living_descendants.size() > 0) {
-			legends.add(this);
-		}
-		
-		if(legends.contains(this)) {
-			Name.retire_name(first_name+last_name);
-		}
-		
-		for (Virus e: infections) {
-			e.remove_infected(this, false);
-		}
-		isDead = true;
-		current_hp = 0; 
-		population.remove(this);
-		Name.removeActiveName(this.first_name + this.last_name);
-		if (gender == GENDER.FEMALE) {
-			female_pop = female_pop - 1;
-		}
-		else {
-			male_pop = male_pop - 1;
-		}
-	}
-	
-	public void run() {
-		
-		boolean done = false; 
-		STAGE current_stage = stage; 
-		double current_growth = growth; 
-		do {
-			
-			Random rand = new Random();
-			int chance = rand.nextInt(100) +1;
-			if (chance > 80) {
-				be_hunted(); 
-			}
-			
-			if(current_hp < max_hp/2 & !isDead & hunger > 40 & thirst > 40 & stamina > 30) {
-				rest();
-			}
-			
-			while (hunger > 40 & thirst > 40 & stamina > 30 & !isDead) {
-				hunt();
-			}
-			if (thirst <= 40 & !isDead) {
-				drink();
-			}
-			if (hunger <= 40 & !isDead) {
-				scavenge();
-			}
-			if(stamina <= 30 & !isDead) {
-				rest();
-			}
-			
-			if (current_stage != stage | (growth - current_growth) >= 5) {
-				done = true; 
-				break; 
-			}
-			
-		} while (done == false & isDead == false);
-		
 	}
 	
 	public void add_to_legends() {
 		legends.add(this);
 		Name.retire_name(first_name+last_name);
 	}
-	
-	
-	public boolean isHealthy() {
-		
-		if(visible) {
-			return false;
-		}
-		else if (current_hp >= 30 & stamina >= 40 & hunger >= 40 & thirst >= 40) {
-			return true;
-		}
-		return false;
-	}
-	
-	public boolean isDead() {
-		if (isDead) {
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
-	
-	public boolean is_related(Dragon two) {
-		
-		for (Dragon a: ancestors) {
-			for (Dragon b: two.ancestors) {
-				if (a == b) {
-					return true; 
-				}
-			}
-		}
-		
-		if(offspring.contains(two) | ancestors.contains(two) | two.ancestors.contains(this) | two.offspring.contains(this)) {
-			return true;
-		}
-		else {
-			return false;
-		}
-		
-	}
-	
-	public int get_num_minor_offspring() {
-		int num = 0;
-		for(Dragon g: offspring) {
-			if(g.get_stage() == STAGE.EGG | g.get_stage() == STAGE.HATCHLING | g.get_stage() == STAGE.ADOLESCENT) {
-				num++;
-			}
-		}
-		return num; 
-		
-	}
-	
-	public ArrayList<Dragon> get_immediate_family(ArrayList<Dragon> pop) {
-		
-		ArrayList<Dragon> family = new ArrayList<Dragon>(); 
-		
-		for (Dragon a: this.ancestors) {
-			//parents, grandparents, etc.
-			family.add(a);
-		}
-		for (Dragon o: descendants) {
-			//children, grand children, etc.
-			family.add(o);
-		}
-		for (Dragon p: pop) {
-			//full siblings
-			if (p.parent_one == null & this.parent_one == null) {}
-			else {
-				if (   (p.parent_one == this.parent_one & p.parent_two == this.parent_two) 
-														| 
-						(p.parent_two == this.parent_one & p.parent_one == this.parent_two)) {
-					family.add(p);
-				}
-			}
-		}
-		
-		return family; 
-		
-	}
-	
-	public void add_ancestors(Dragon parent) {
-		
-		boolean done = false;
-		while (!done) {
-			if (parent == null) {
-				done = true; 
-				break;
-			}
-			else {
-				ancestors.add(parent);
-				Dragon next_1 = parent.parent_one;
-				add_ancestors(next_1);
-				Dragon next_2 = parent.parent_two;
-				add_ancestors(next_2);
-			}
-		}
-		
-	}
-	
-	
+
 	public void rename(String first_name, String last_name) {
 		this.first_name = first_name;
 		this.last_name = last_name;
@@ -1177,257 +910,21 @@ public class Dragon {
 		return code; 
 	}
 	
-	public STAGE get_stage() {
-		if (growth < 1) {
-			return STAGE.EGG;
-		}
-		if (growth < 5) {
-			return STAGE.HATCHLING;
-		}
-		else if (growth < 15) {
-			return STAGE.ADOLESCENT;
-		}
-		else if (growth < 50) {
-			return STAGE.ADULT;
-		}
-		else {
-			return STAGE.ELDER;
-		}
-	}
-	
-	public SPECIES get_species() {
-		return species; 
-	}
-	
-	public ELEMENT get_element() {
-		return element; 
-	}
-	
-	public GENDER get_gender() {
-		return gender; 
-	}
-	
-	public int get_id() {
-		return id; 
-	}
-
-	public String get_name() {
-		return name; 
-	}
-	
-	public int get_experience() {
-		return experience; 
-	}
-	
-	public double get_current_hp() {
-		return current_hp; 
-	}
-	
-	public double get_max_hp() {
-		return max_hp; 
-	}
-	
-	public double get_aggression() {
-		return aggression;
-	}
-	
-	public Skin get_skin() {
-		return skin; 
-	}
-	
-	public String get_growth() {
-		return round_decimal(growth); 
-	}
-	
-	public int get_life_span() {
-		return life_span;
-	}
-	
-	public int get_num_of_offspring () {
-		return offspring.size();
-	}
-	
+	@Override
 	public int get_season_limit() {
-		return season_limit;
-	}
-	
-	public int get_curr_season_count() {
-		return curr_season_count;
-	}
-	
-	public boolean reachedSeasonLimit() {
-		if(this.curr_season_count >= season_limit) {
-			return true;
-		}
-		else {
-			return false; 
-		}
-	}
-	
-	public void reset_season_count() {
-		curr_season_count = 0; 
-	}
-	
-	public boolean isVisiblyIll() {
-		return visible;
-	}
-	
-	public void setVisiblyIll(boolean visible) {
-		this.visible = visible;
-	}
 
-	public ArrayList<Virus> get_infections() {
-		return infections;
-	}
-	
-	public ArrayList<Virus> get_immunities() {
-		return immunities;
-	}
-	
-	public double get_immune_sys() {
-		return immune_sys;
-	}
-	
-	public double get_resist_coeff() {
-		return immune_sys - (max_hp-current_hp)/1000 - (100 - hunger)/1000 - (100 - thirst)/1000 - (100 - stamina)/1000;
-	}
-	
-	public double get_stat_coeff() {
-		
-		double total = 0;
-		total += attack_growth + defense_growth + speed_growth;
-		return total;
-		
-	}
-	
-	public Dragon[] get_parents() {
-		
-		Dragon[] parents = {parent_one, parent_two};
-		return parents; 
-		
-	}
-	
-	public Dragon get_parent_one() {
-		return parent_one;
-	}
-	
-	public Dragon get_parent_two() {
-		return parent_two; 
-	}
-	
-	public ArrayList<Dragon> get_offspring() {
-		return offspring;
-	}
-	
-	public ArrayList<Dragon> get_ancestors() {
-		return ancestors;
-	}
-	
-	public ArrayList<Dragon> get_descendants() {
-		return descendants; 
-	}
-
-	public ArrayList<Dragon> rank_choices (ArrayList<Dragon> choices) {
-		
-		choices = rank(choices);
-		if (choices.isEmpty()) {
-			return choices;
-		}
-		else if (choices.size() > season_limit) {
-			while (choices.size() > season_limit) {
-				Dragon last = choices.get(choices.size()-1);
-				choices.remove(last);
-			}
-			return choices;
-		}
-		else if (choices.size() == season_limit) {
-			return choices; 
+		if (gender == Gender.FEMALE) {
+			//return 12;
+			return season_limit; 
 		}
 		else {
-			int count = 0;
-			int wrap = season_limit/choices.size();
-			while (choices.size() < season_limit) {
-				if (count > wrap) {
-					count = 0; 
-				}
-				Dragon first = choices.get(count);
-				choices.add(first);
-				count++;
-				
-			}
-			return choices;
+			//return season limit;
+			return 144; 
 		}
 		
 	}
 	
-	public ArrayList<Dragon> rank (ArrayList<Dragon> choices) {
-		
-		ArrayList<Dragon> rank = new ArrayList<Dragon>(); 
-		
-		Dragon max = null;
-		double highest = 0;
-		for (Dragon d: choices) {
-			
-			double rating = d.get_rating();
-			if (rating > highest) {
-				highest = rating;
-				max = d;
-				rank.add(0, max);
-			}
-			else {
-				for (int i = 0; i < rank.size(); i++) {
-					
-					if (rank.get(i).get_rating() < rating) {
-						rank.add(i, d);
-						break; 
-					}
-					
-				}
-				if (!rank.contains(d)) {
-					rank.add(d);
-				}
-			}
-		}
-		
-		return rank;
-		
-	}
-	
-	private double get_rating() {
-		double rating = 0;
-		rating += experience + attack + defense + speed + immune_sys*20 + aggression*10; 
-		rating += compare_immunities(this);
-		rating += skin.get_color_distance(env_color);
-		rating += skin.get_pigment_distance(env_pigment);
-		rating += skin.get_shade_distance(env_shade);
-		if(infections.isEmpty()) {
-			rating+=1;
-		}
-		else {
-			rating = rating-1; 
-		}
-		return rating;
-	}
-	
-	public int compare_immunities(Dragon two) {
-		
-		int variants = 0;
-		
-		for (Virus e: immunities) {
-			if (!two.immunities.contains(e)) {
-				variants++;
-			}
-		}
-		for (Virus f: two.immunities) {
-			if (!this.immunities.contains(f)) {
-				variants++;
-			}
-		}
-		
-		return variants; 
-		
-	}
-	
+	@Override
 	public String get_stats() {
 		String stats = ""; 
 		String parents = "";
@@ -1438,13 +935,13 @@ public class Dragon {
 			parents = parent_one.get_name() + " & " + parent_two.get_name();
 		}
 		String babies = "";
-		for (Dragon i: offspring) {
+		for (Creature i: offspring) {
 			babies += i.get_name() + ", ";
 		}
 		
 		String legacy = ", child of ";
 		String ancestry = "";
-		for (Dragon e: ancestors) {
+		for (Creature e: ancestors) {
 			ancestry += e.get_name() + ", ";
 			if(legends.contains(e)) {
 				legacy += e.get_name() + ", ";
@@ -1456,7 +953,7 @@ public class Dragon {
 		}
 		
 		String progeny = "";
-		for (Dragon e: descendants) {
+		for (Creature e: descendants) {
 			progeny += e.get_name() + ", ";
 		}
 		
@@ -1471,8 +968,8 @@ public class Dragon {
 		}
 		
 		String live = "";
-		ArrayList<Dragon> living_descendants = new ArrayList<Dragon>(); 
-		for (Dragon e: this.descendants) {
+		ArrayList<Creature> living_descendants = new ArrayList<Creature>(); 
+		for (Creature e: this.descendants) {
 			
 			if (!e.isDead) {
 				living_descendants.add(e);
@@ -1507,6 +1004,7 @@ public class Dragon {
 				+ "Growth (" + round_decimal(get_stat_coeff()) + "): " + attk_growth + " / " + dfns_growth + " / "+ spd_growth + "\n"
 				+ "Aggression: " + round_decimal(aggression) + "\n"
 				+ "Dead: " + isDead + "\n"
+				+ "Season Limit: " + this.get_season_limit() + "\n"
 				+ "Offspring: " + babies + "\n"
 				+ "Descendants(" + living_descendants.size() + " / " + descendants.size() + "): " + progeny + "\n"
 				+ "Living: " + live + "\n"
@@ -1518,7 +1016,80 @@ public class Dragon {
 	}
 	
 	//class functions 
-	
+	/*
+	 * public static int season(ArrayList<Creature> pop) {
+	 * 
+	 * HashMap<Creature, Integer> wins = new HashMap<Creature, Integer>();
+	 * HashMap<Creature, Integer> losses = new HashMap<Creature, Integer>();
+	 * ArrayList<Creature> dead = new ArrayList<Creature>(); HashMap<Creature,
+	 * Creature> match_ups = new HashMap<Creature, Creature>(); ArrayList<Creature>
+	 * babies = new ArrayList<Creature>();
+	 * 
+	 * Random rand = new Random(); ArrayList<Creature> younglings = new
+	 * ArrayList<Creature>(); ArrayList<Creature> challengers = new
+	 * ArrayList<Creature>(); for (Creature d: pop) { if (!d.isDead()) {
+	 * d.reset_season_count(); //int seed = rand.nextInt(100); if (d.isAdult() &
+	 * d.isHealthy() & !d.isDead() & !d.isVisiblyIll() & !d.reachedSeasonLimit()) {
+	 * challengers.add(d); wins.put(d, 0); losses.put(d, 0); } else if (d.isMinor())
+	 * { younglings.add(d); for (Creature p: d.get_parents()) { if (p != null) { if
+	 * (!p.isDead()) { p.infect(d); d.infect(p); } } } } } }
+	 * 
+	 * for(Creature d: younglings) { if (!d.isVisiblyIll()) { for(Creature m:
+	 * younglings) { if (d != m & !m.isVisiblyIll()) { d.infect(m); } } } }
+	 * 
+	 * for (Creature d: challengers) { //System.out.println(d.get_name() +
+	 * " sizes up the field."); ArrayList<Creature> matches = new
+	 * ArrayList<Creature>(); int limit = 0; if (d.isDead()) { dead.add(d);
+	 * continue; } else if (!d.isAdult()) { continue; } else if (!d.isHealthy() |
+	 * d.isVisiblyIll()) { continue; } else if (d.reachedSeasonLimit()) { continue;
+	 * } else {
+	 * 
+	 * for (Creature m: challengers) {
+	 * 
+	 * if(match_ups.get(m) == d | match_ups.get(d) == m) { continue; }
+	 * 
+	 * boolean will = false; if (!m.isRelated(d) |
+	 * (!m.get_immediate_family(population).contains(d) & (d.get_num_of_offspring()
+	 * < 2) & (m.get_num_of_offspring() < 2))) { will = true; }
+	 * 
+	 * if (!m.isAdult()) { continue; } else if (m == d) { continue; } else if
+	 * (m.isDead()) { dead.add(m); continue; } if (d.isDead()) { dead.add(d); break;
+	 * } else if (m.isVisiblyIll()) { break; } else if (!m.isHealthy() &
+	 * m.get_aggression() < 0.5) { continue; } else if (!d.isHealthy() &
+	 * d.get_aggression() < 0.5) { break; } else if (d.reachedSeasonLimit() |
+	 * m.reachedSeasonLimit()) { break; } else if ( d.get_gender() == m.get_gender()
+	 * & (!d.get_immediate_family(population).contains(m) &
+	 * !m.get_immediate_family(population).contains(d)) &
+	 * !(d.find_potential().isEmpty() | m.find_potential().isEmpty())) {
+	 * 
+	 * boolean disjoint = true; for (Creature g: d.find_potential()) { for(Creature
+	 * b: m.find_potential()) { if (g == b) { disjoint = false; } } }
+	 * 
+	 * if(disjoint) { System.out.println(m.get_name() + " & " + d.get_name() +
+	 * " had nothing to fight over."); continue; }
+	 * 
+	 * //they'll fight d.infect(m); Creature winner = d.fight(m); match_ups.put(d,
+	 * m); match_ups.put(m, d); if (winner == null) { dead.add(d); dead.add(m); }
+	 * else if (d == winner) { wins.put(d, wins.get(d)+1); losses.put(m,
+	 * losses.get(m)+1); } else { wins.put(m, wins.get(m)+1); losses.put(d,
+	 * losses.get(d)+1); break; } continue; } else if ((d.get_gender() !=
+	 * m.get_gender()) & (will)) {
+	 * 
+	 * if (wins.get(d) > losses.get(d) | match_ups.isEmpty()) {
+	 * System.out.println(d.get_name() + " wins the heart of " + m.get_name() +
+	 * " with a score of " + wins.get(d) + "w/l" + losses.get(d)); matches.add(m); }
+	 * } else if ((d.isRelated(m))) { d.infect(m); } } for (Creature match:
+	 * d.rank_choices(matches)) { if (!d.isDead() & !match.isDead()) {
+	 * 
+	 * d.infect(match); Dragon baby =
+	 * (Dragon.class.cast(d)).reproduce(Dragon.class.cast(match)); if (baby != null)
+	 * { babies.add(baby); //order_view.getItems().add(baby.get_name()); } } } } }
+	 * 
+	 * for (Creature d: dead) { population.remove(d); } int num_babies =
+	 * babies.size(); for (Creature b: babies) { population.add(b); }
+	 * //System.out.println(num_babies + " eggs were laid."); babies.clear(); return
+	 * num_babies; }
+	 */
 	
 	public static int get_dragon_count() {
 		return drgn_count;
@@ -1528,76 +1099,85 @@ public class Dragon {
 		return legends; 
 	}
 	
-	public static int get_pop_size() {
-		return population.size();
+	public static int get_global_population() {
+		return dragon_population.size();
 	}
 	
 	public static double get_avg_immunity() {
 		
 		double avg = 0;
-		for (Dragon d: population) {
+		for (Creature d: dragon_population) {
 			avg += d.immune_sys;
 		}
-		if (population == null) {
+		if (dragon_population == null) {
 			return 0;
 		}
-		else if(population.size() == 0) {
+		else if(dragon_population.size() == 0) {
 			return 0;
 		}
 		else {
-			return avg/population.size();
+			return avg/dragon_population.size();
 		}
 		
 	}
 	
-	public static double get_avg_stat_coeff(ArrayList<Dragon> dragons) {
+	public static double get_avg_stat_coeff() {
 		
 		double avg = 0; 
 
-		for (Dragon d: dragons) {
+		for (Creature d: dragon_population) {
 			avg += d.get_stat_coeff();
 		}
-		if (dragons.size() != 0) {
-			avg = avg/dragons.size();
+		if (dragon_population.size() != 0) {
+			avg = avg/dragon_population.size();
 		}
 		return avg;
 		
 	}
 	
-	public static double get_avg_aggression (ArrayList<Dragon> dragons) {
+	public static double get_avg_aggression () {
 		double avg = 0;
-		for (Dragon d: dragons) {
+		for (Creature d: dragon_population) {
 			avg += d.get_aggression();
 		}
-		return avg/dragons.size();
+		return avg/dragon_population.size();
 	}
 	
-	public static double get_avg_imm_sys(ArrayList<Dragon> dragons) {
+	public static double get_avg_imm_sys() {
 		
 		double avg = 0;
-		for (Dragon d: dragons) {
+		for (Creature d: dragon_population) {
 			avg += d.get_immune_sys();
 		}
-		return avg/dragons.size();
+		return avg/dragon_population.size();
 		
 	}
 	
 	public static int get_avg_life_span() {
 		
 		int avg = 0;
-		for (Dragon d: population) {
+		for (Creature d: dragon_population) {
 			avg += d.life_span;
 		}
-		if (population == null) {
+		if (dragon_population == null) {
 			return 0;
 		}
-		else if(population.size() == 0) {
+		else if(dragon_population.size() == 0) {
 			return 0;
 		}
 		else {
-			return avg/population.size();
+			return avg/dragon_population.size();
 		}
 		
+	}
+	
+	
+	public static int get_male_pop() {
+		return male_pop;
+	}
+	
+	public static int get_female_pop() {
+		return female_pop; 
 	}
 	
 	public static Dragon get_winner() {
@@ -1608,179 +1188,6 @@ public class Dragon {
 			}
 		}
 		return winner; 
-	}
-	
-	private static SPECIES choose_species(Dragon one, Dragon two) {
-		
-		Random rand = new Random(); 
-		int a = rand.nextInt(10) + 1;
-		if (a <= 5) {
-			return one.species;
-		}
-		else {
-			return two.species;
-		}
-		
-	}
-	
-	private static ELEMENT choose_element(Dragon one, Dragon two) {
-		
-		Random rand = new Random(); 
-		int a = rand.nextInt(10) + 1;
-		if (a <= 5) {
-			return one.element;
-		}
-		else {
-			return two.element;
-		}
-		
-	}
-	
-	private static GENDER random_gender() {
-		
-		Random rand = new Random(); 
-		int a = rand.nextInt(10) + 1;
-		if (a <= 5) {
-			return GENDER.MALE;
-		}
-		else {
-			return GENDER.FEMALE;
-		}
-		
-	}
-	
-	private static SPECIES random_species() {
-		
-		Random rand = new Random(); 
-		int a = rand.nextInt(3) + 1;
-		if (a == 1) {
-			return SPECIES.WYVERN;
-		}
-		else if (a == 2) {
-			return SPECIES.QUADREN;
-		}
-		else {
-			return SPECIES.SERPENT;
-		}
-		
-	}
-		
-	private static ELEMENT random_element() {
-		
-		Random rand = new Random(); 
-		int a = rand.nextInt(4) + 1;
-		if (a == 1) {
-			return ELEMENT.WATER;
-		}
-		else if (a == 2) {
-			return ELEMENT.AIR;
-		}
-		else if (a == 3) {
-			return ELEMENT.FIRE;
-		}
-		else {
-			return ELEMENT.EARTH;
-		}
-		
-	}
-	
-	public static Skin.COLORS get_env_color() {
-		return env_color;
-	}
-	
-	public static void set_env_color(COLORS color) {
-		env_color = color;
-	}
-	
-	public static Skin.SHADES get_env_shade() {
-		return env_shade;
-	}
-	
-	public static void set_env_shade(SHADES shade) {
-		env_shade = shade;
-	}
-	
-	public static Skin.PIGMENTS get_env_pigment() {
-		return env_pigment; 
-	}
-	
-	public static void set_env_pigment(PIGMENTS pigment) {
-		env_pigment = pigment; 
-	}
-	
-	public static String round_decimal(Double dec) {
-		
-		String num = "";
-		String dec_str = dec.toString();
-		//System.out.println(dec_str);
-		int index_of_dot = dec_str.indexOf(".");
-		//System.out.println(index_of_dot);
-		if (index_of_dot == -1) {
-			num = dec_str.substring(0, 2);
-		}
-		else if (dec_str.split("").length < 4) {
-			num = dec_str.substring(0, 3);
-		}
-		else if (dec < 1.0 & dec > -1.0) {
-			num = dec_str.substring(1, index_of_dot+3);
-		}
-		else if (dec == 0) {
-			return "0";
-		}
-		else {
-			num = dec_str.substring(0, index_of_dot + 2);
-		}
-		
-		if (num == null) {
-			System.out.println("Null while rounding");
-			return "0";
-		}
-		else {
-			return num;
-		}
-		
-	}
-	
-	
-	public static void randomize_env() {
-		
-		Random rand = new Random();
-		int color = rand.nextInt(Skin.COLORS.values().length); 
-		int count = 0;
-		for (COLORS i: COLORS.values()) {
-			if (count == color) {
-				env_color = i; 
-			}
-			count++;
-		}
-		
-		int shade = rand.nextInt(Skin.SHADES.values().length); 
-		count = 0;
-		for (Skin.SHADES i: Skin.SHADES.values()) {
-			if (count == shade) {
-				env_shade = i; 
-			}
-			count++;
-		}
-		
-		int pigment = rand.nextInt(Skin.PIGMENTS.values().length); 
-		count = 0;
-		for (Skin.PIGMENTS i: Skin.PIGMENTS.values()) {
-			if (count == pigment) {
-				env_pigment = i; 
-			}
-			count++;
-		}
-		
-	}
-	
-	@SuppressWarnings("serial")
-	private class ActionIllegalException extends Exception {
-		
-		public ActionIllegalException(String errorMessage) {
-			super(errorMessage);
-		}
-		
 	}
 
 }

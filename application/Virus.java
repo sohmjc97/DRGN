@@ -18,7 +18,7 @@ public class Virus {
 	private int current_infected = 0;
 	private int total_infected = 0;
 	private int killed = 0;
-	private ArrayList<Dragon> infected = new ArrayList<Dragon>();
+	private ArrayList<Creature> infected = new ArrayList<Creature>();
 	private Virus parent = null;
 	
 	private double trans;	//how easily it spreads
@@ -158,7 +158,7 @@ public class Virus {
 		return killed; 
 	}
 	
-	public ArrayList<Dragon> get_infected() {
+	public ArrayList<Creature> get_infected() {
 		return infected;
 	}
 	
@@ -166,20 +166,20 @@ public class Virus {
 		return parent; 
 	}
 	
-	public boolean add_infected(Dragon dragon) {
-		if(infected.contains(dragon)) {
+	public boolean add_infected(Creature creature) {
+		if(infected.contains(creature)) {
 			return false;
 		}
 		else {
-			infected.add(dragon);
+			infected.add(creature);
 			current_infected++;
 			total_infected++;
 			return true;
 		}
 	}
 	
-	public boolean remove_infected(Dragon dragon, boolean isdead) {
-		if (infected.remove(dragon)) {
+	public boolean remove_infected(Creature creature, boolean isdead) {
+		if (infected.remove(creature)) {
 			if (isdead) {
 				killed++;
 			}
@@ -200,7 +200,7 @@ public class Virus {
 		current_infected = current_infected - 1;
 	}
 	
-	public static Virus manual_infect(Dragon d) {
+	public static Virus manual_infect(Creature d) {
 		
 		Virus novel;
 		Random rand = new Random();
@@ -248,17 +248,17 @@ public class Virus {
 	
 	private void purge() {
 		
-		ArrayList<Dragon> out = new ArrayList<Dragon>();
-		for (Dragon d: infected) {
+		ArrayList<Creature> out = new ArrayList<Creature>();
+		for (Creature d: infected) {
 			if (d.isDead() | !d.get_infections().contains(this)) {
 				out.add(d);
 			}
 		}
-		for (Dragon e: out) {
+		for (Creature e: out) {
 			remove_infected(e, false);
 		}
 		
-		if(total_infected > Dragon.get_pop_size()/2 & !recurrent_infections.contains(this)) {
+		if(total_infected > Creature.get_creature_pop_size()/2 & !recurrent_infections.contains(this)) {
 			recurrent_infections.add(this);
 			System.out.println("Virus #" + this.id + " added to recurrent infections.");
 		}
@@ -274,7 +274,7 @@ public class Virus {
 			parent = "Parent virus: " + this.parent.get_id();
 		}
 		String lof = "";
-		for (Dragon i: infected) {
+		for (Creature i: infected) {
 			lof = lof + i.get_name() + ", ";
 		}
 		String stats = "ID: " + id + "\n"

@@ -37,8 +37,6 @@ public class Skin {
 	
 	private static HashMap<String, String> descriptions = new HashMap<String, String>();
 	
-	
-	
 	public Skin() {
 		color = random_color();
 		shade = random_shade();
@@ -107,14 +105,14 @@ public class Skin {
 		
 	}
 	
-	public static Skin collective_mix(ArrayList<Dragon> pop) {
+	public static Skin collective_mix(ArrayList<Creature> pop) {
 		
 		COLORS mcc = COLORS.WHITE;
 		SHADES mcs = SHADES.LIGHT;
 		PIGMENTS mcp = PIGMENTS.PALE;
 		
 		ArrayList<Skin> skins = new ArrayList<Skin>();
-		for (Dragon e: pop) {
+		for (Creature e: pop) {
 			skins.add(e.get_skin());
 		}
 		HashMap<COLORS, Integer> color_tracker = new HashMap<COLORS, Integer>();

@@ -2,28 +2,26 @@ package application;
 
 import java.util.ArrayList;
 
-import application.Dragon.STAGE;
-
 public class Statistics {
 	
 	private static int stat_count = 0;
 	private int id; 
 
-	private static ArrayList<Dragon> total_population = new ArrayList<Dragon>();
-	private ArrayList<Dragon> current_population = new ArrayList<Dragon>();
+	private static ArrayList<Creature> total_population = new ArrayList<Creature>();
+	private ArrayList<Creature> current_population = new ArrayList<Creature>();
 	
 	private static double survival_to_adulthood;
 	private static double survive_and_reproduce;
 	private static double survival_to_adolescence;
 	
-	private Dragon highest_growths;
-	private Dragon lowest_growths;
-	private Dragon highest_imm;
-	private Dragon lowest_imm; 
-	private Dragon highest_agg;
-	private Dragon lowest_agg;
-	private Dragon best_overall;
-	private Dragon worst_overall;
+	private Creature highest_growths;
+	private Creature lowest_growths;
+	private Creature highest_imm;
+	private Creature lowest_imm; 
+	private Creature highest_agg;
+	private Creature lowest_agg;
+	private Creature best_overall;
+	private Creature worst_overall;
 	
 	private double avg_growths;
 	private double avg_imm;
@@ -33,12 +31,12 @@ public class Statistics {
 	private double avg_lifespan; 
 	private double avg_offspring; 
 	
-	public Statistics (ArrayList<Dragon> pop) {
+	public Statistics (ArrayList<Creature> pop) {
 		
 		stat_count++;
 		id = stat_count; 
 		
-		for (Dragon d: pop) {
+		for (Creature d: pop) {
 			if (!total_population.contains(d)) {
 				total_population.add(d);
 			}
@@ -65,7 +63,7 @@ public class Statistics {
 	public int get_avg_life_span() {
 		
 		int avg = 0;
-		for (Dragon d: current_population) {
+		for (Creature d: current_population) {
 			avg += d.get_life_span();
 		}
 		if (current_population == null) {
@@ -83,7 +81,7 @@ public class Statistics {
 	public double get_avg_immunity() {
 		
 		double avg = 0;
-		for (Dragon d: current_population) {
+		for (Creature d: current_population) {
 			avg += d.get_immune_sys();
 		}
 		if (current_population == null) {
@@ -102,7 +100,7 @@ public class Statistics {
 		
 		double avg = 0; 
 
-		for (Dragon d: current_population) {
+		for (Creature d: current_population) {
 			avg += d.get_stat_coeff();
 		}
 		if (current_population.size() != 0) {
@@ -114,7 +112,7 @@ public class Statistics {
 	
 	public double get_avg_aggression () {
 		double avg = 0;
-		for (Dragon d: current_population) {
+		for (Creature d: current_population) {
 			avg += d.get_aggression();
 		}
 		if (current_population.size() != 0) {
@@ -125,11 +123,11 @@ public class Statistics {
 	
 	public void find_end_growths() {
 		
-		Dragon max = null;
-		Dragon min = null;
+		Creature max = null;
+		Creature min = null;
 		double max_coeff = 0;
 		double min_coeff = 100;
-		for (Dragon d: current_population) {
+		for (Creature d: current_population) {
 			double coeff = d.get_stat_coeff();
 			if (coeff > max_coeff) {
 				max = d; 
@@ -147,11 +145,11 @@ public class Statistics {
 	
 	public void find_end_imms() {
 		
-		Dragon max = null;
-		Dragon min = null;
+		Creature max = null;
+		Creature min = null;
 		double max_coeff = 0;
 		double min_coeff = 100;
-		for (Dragon d: current_population) {
+		for (Creature d: current_population) {
 			double coeff = d.get_immune_sys();
 			if (coeff > max_coeff) {
 				max = d; 
@@ -169,11 +167,11 @@ public class Statistics {
 	
 	public void find_end_aggs() {
 		
-		Dragon max = null;
-		Dragon min = null;
+		Creature max = null;
+		Creature min = null;
 		double max_coeff = 0;
 		double min_coeff = 100;
-		for (Dragon d: current_population) {
+		for (Creature d: current_population) {
 			double coeff = d.get_aggression();
 			if (coeff > max_coeff) {
 				max = d; 
@@ -194,8 +192,8 @@ public class Statistics {
 		int total = 0;
 		int count = 0; 
 		
-		for(Dragon g: current_population) {
-			if(g.get_stage() == STAGE.ADULT | g.get_stage() == STAGE.ELDER) {
+		for(Creature g: current_population) {
+			if(g.isAdult()) {
 				total += g.get_num_of_offspring();
 				count++;
 			}
@@ -206,11 +204,11 @@ public class Statistics {
 		return avg; 
 	}
 	
-	private Dragon find_greatest_offspring() {
-		Dragon big_daddy = null; 
+	private Creature find_greatest_offspring() {
+		Creature big_daddy = null; 
 		int num = 0;
 		
-		for(Dragon g: current_population) {
+		for(Creature g: current_population) {
 			if (g.get_num_of_offspring() > num) {
 				big_daddy = g;
 				num = g.get_num_of_offspring();
@@ -224,13 +222,13 @@ public class Statistics {
 		return big_daddy; 
 	}
 	
-	public void find_biggest_dynasty_of_living_ancestors (ArrayList<Dragon> list) {
+	public void find_biggest_dynasty_of_living_ancestors (ArrayList<Creature> list) {
 		
-		Dragon maxim = null;
+		Creature maxim = null;
 		int max = 0; 
-		Dragon little = null;
+		Creature little = null;
 		String lineage = "No lineage found.";
-		for(Dragon e: list) {
+		for(Creature e: list) {
 			//System.out.println("Investigating " + e.name);
 			int check = find(e.get_offspring(), 1);
 			if (check > max) {
@@ -257,7 +255,7 @@ public class Statistics {
 		
 	}
 	
-	public int find (ArrayList<Dragon> list, int count) {
+	public int find (ArrayList<Creature> list, int count) {
 		
 		int generations = 0 ; 
 		
@@ -267,7 +265,7 @@ public class Statistics {
 		}
 		int max = 1; 
 		//int body_count = 0;
-		for (Dragon e: list) {
+		for (Creature e: list) {
 			if(e.isDead()) {
 				//body_count++;
 				//System.out.println(e.get_name() + " is dead, so they don't count." + generations + max + count);
@@ -290,15 +288,15 @@ public class Statistics {
 		return max; 
 	}
 	
-	public Dragon find_two (ArrayList<Dragon> list, int count, int aim, Dragon d) {
-		Dragon b = null;
-		Dragon saved = null;
+	public Creature find_two (ArrayList<Creature> list, int count, int aim, Creature d) {
+		Creature b = null;
+		Creature saved = null;
 		if (list.isEmpty() & aim == count & !d.isDead()) {
 			//System.out.println(this.name + " found w/ aim: " + aim + "/ count: " + count);
 			return d; 
 		}
 		//System.out.println("Find_two: " + aim + " " + count);
-		for (Dragon e: list) {
+		for (Creature e: list) {
 				if (e.isDead() == true) {
 					continue; 
 				}
@@ -318,16 +316,16 @@ public class Statistics {
 	/*
 	 * Move to Statistics
 	 */
-	public String trace_lineage(Dragon oldest, Dragon youngest) {
+	public String trace_lineage(Creature oldest, Creature youngest) {
 		
 		String none = "No lineage could be traced.";
 		if (oldest != null & youngest != null) {
 			String lineage = oldest.get_name();
-			Dragon next = oldest;
+			Creature next = oldest;
 			boolean done = false; 
 			int index = 0; 
 			
-			for (Dragon d: next.get_offspring()) {
+			for (Creature d: next.get_offspring()) {
 				if (d.get_offspring() == null | d.get_descendants() == null) {
 					continue; 
 				}
@@ -358,15 +356,15 @@ public class Statistics {
 			
 	}
 	
-	public void find_longest_dynasty_of_living_ancestor(ArrayList<Dragon> list) {
+	public void find_longest_dynasty_of_living_ancestor(ArrayList<Creature> list) {
 		
 		int diff = 0; 
 		int generations = 1; 
-		Dragon oldest = null; 
-		Dragon youngest = null; 
-		for (Dragon e: list) {
+		Creature oldest = null; 
+		Creature youngest = null; 
+		for (Creature e: list) {
 			int smaller_id = e.get_id();
-			for (Dragon d: e.get_descendants()) {
+			for (Creature d: e.get_descendants()) {
 				//first is oldest ancestor, last is youngest descendant
 				int bigger_id = d.get_id();
 				if (bigger_id - smaller_id > diff) {
@@ -378,11 +376,11 @@ public class Statistics {
 		}
 		if (oldest != null & youngest != null) {
 			String lineage = oldest.get_name();
-			Dragon next = oldest;
+			Creature next = oldest;
 			boolean done = false; 
 			int index = 0; 
 			
-			for (Dragon d: next.get_offspring()) {
+			for (Creature d: next.get_offspring()) {
 				if (d.get_offspring() == null | d.get_descendants() == null) {
 					continue; 
 				}
@@ -418,16 +416,16 @@ public class Statistics {
 		}
 	}
 	
-	public void find_longest_surviving_dynasty(ArrayList<Dragon> list) {
+	public void find_longest_surviving_dynasty(ArrayList<Creature> list) {
 		
 		int diff = 0; 
 		int generations = 1; 
-		Dragon oldest = null; 
-		Dragon youngest = null; 
-		for (Dragon living: list) {
+		Creature oldest = null; 
+		Creature youngest = null; 
+		for (Creature living: list) {
 			//for every living dragon
 			int bigger_id = living.get_id();
-			for (Dragon elder: living.get_ancestors()) {
+			for (Creature elder: living.get_ancestors()) {
 				//look at all of the ancestors of each dragon 
 				int smaller_id = elder.get_id();
 				//if they have the oldest ancestors
@@ -442,7 +440,7 @@ public class Statistics {
 		//DragonG -- DragonD -- DragonGD
 		if (oldest != null & youngest != null) {
 			String lineage = youngest.get_name();
-			Dragon next = youngest;
+			Creature next = youngest;
 			boolean done = false; 
 			while (done == false) {
 					if (next.get_parent_one() == oldest | next.get_parent_two() == oldest) {
