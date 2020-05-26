@@ -553,7 +553,7 @@ public class Predator extends Creature {
 				throw new ActionIllegalException("This pairing is unsuccessful.");
 			}
 		} catch (ActionIllegalException e) {
-			System.out.println(e.getMessage());
+			//System.out.println(e.getMessage());
 			return null;
 		}
 	}

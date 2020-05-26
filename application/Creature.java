@@ -19,6 +19,7 @@ public abstract class Creature {
 	 * Should sociability be a genetic factor? High sociability meaning bonding to others and caring (hunting, defending) for them?
 	 * Should a creature keep track of its partners and care for them when they can't (sick, injured, etc)?
 	 * Should males even have a season limit?
+	 * See if there is a way to make matches lay eggs when they match instead of after / maybe based on aggression?
 	 */
 	
 	protected static ArrayList<Creature> population = new ArrayList<Creature>();
@@ -690,7 +691,7 @@ public abstract class Creature {
 	
 	protected void play(Creature two) {
 		if(two.isHealthy() & this.isHealthy()) {
-			System.out.println(name + " plays with " + two.get_name());
+			//System.out.println(name + " plays with " + two.get_name());
 			experience++;
 			stamina = stamina - 20;
 			hunger = hunger - 10;
@@ -1528,7 +1529,7 @@ public abstract class Creature {
 			d.hasGrown = false;
 			if (!d.isDead()) {
 				d.reset_season_count();
-				if (d.isAdult() & d.isHealthy() & !d.isVisiblyIll()) {
+				if (d.isAdult() & d.isHealthy() & !d.isVisiblyIll() & d.get_stage() != Stage.ELDER) {
 					challengers.add(d);
 					wins.put(d, 0);
 					losses.put(d, 0);
@@ -1685,6 +1686,20 @@ public abstract class Creature {
 						if (wins.get(d) > losses.get(d) | match_ups.isEmpty()) {
 							System.out.println(d.get_name() + " wins the heart of " + m.get_name() + " with a score of " + wins.get(d) + "w/l" + losses.get(d));
 							matches.add(m);
+							
+							d.infect(m);
+							Creature baby = null;
+							try {
+								baby = (Creature) d.my_class.cast(d).getClass().getMethod("reproduce", d.my_class).invoke(d, m);
+							} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
+									| NoSuchMethodException | SecurityException e) {
+								e.printStackTrace();
+								System.out.println("Issue with calling .reproduce()");
+							}
+							if (baby != null) {
+								babies.add(baby);
+							}
+							
 						}
 					}
 					else if ((d.isRelated(m))) {
