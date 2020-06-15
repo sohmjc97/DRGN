@@ -1,14 +1,12 @@
 package application;
 	
 import java.util.ArrayList;
-
 import java.util.HashMap;
 
 import application.Region.Resources;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.stage.Stage;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
@@ -18,6 +16,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
 
 public class Main extends Application {
 	
@@ -317,9 +316,9 @@ public class Main extends Application {
 		
 		Button season = new Button("Season");
 		season.setOnAction(e-> {
-			Prey.season(starting_region.get_prey_population());
-			Dragon.season(starting_region.get_dragon_population());
-			Predator.season(starting_region.get_predator_population());
+			Creature.season(starting_region.get_prey_population());
+			Creature.season(starting_region.get_dragon_population());
+			Creature.season(starting_region.get_predator_population());
 			update_orders();
 		});
 		

@@ -176,6 +176,11 @@ public class Prey extends Creature {
 			male_pop++;
 			season_limit = 180;
 		}
+		
+		if(season_limit <= 0) {
+			season_limit = 1;
+		}
+		
 		skin = new Skin(one.skin, two.skin);
 		stage = get_stage();
 		

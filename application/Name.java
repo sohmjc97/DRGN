@@ -20,6 +20,8 @@ public class Name {
 		Rising,
 		Winter,
 		Summer,
+		First,
+		Last,
 		Fleet,
 		Clear,
 		Burning,
@@ -85,7 +87,9 @@ public class Name {
 	static {
 		incompatible_names.put("Striking", "Strike");
 		incompatible_names.put("Dancing", "Dance");
+		incompatible_names.put("Dancing", "Dancer");
 		incompatible_names.put("Rising", "Rise");
+		incompatible_names.put("Fleet", "Streak");
 		incompatible_names.put("Falling", "Fall");
 		incompatible_names.put("Scorching", "Scorch");
 		incompatible_names.put("Fire", "Flame");
@@ -101,16 +105,7 @@ public class Name {
 	static ArrayList<String> retired_names = new ArrayList<String>();
 	
 	public static void rename(Dragon d) {
-		String color = d.get_skin().get_color().toString().toLowerCase();
-		color = color.substring(0, 1).toUpperCase() + color.substring(1);
-		
-		String color_name = color;
-		ArrayList<String> color_names_first = first_name_by_color(color_name);
-		ArrayList<String> color_names_last = last_name_by_color(color_name);
-		ArrayList<String> shade_name_first = first_name_by_shade(d.get_skin().get_shade().toString());
-		ArrayList<String> shade_name_last = last_name_by_shade(d.get_skin().get_shade().toString());
-		ArrayList<String> pigm_name_first = first_name_by_pigment(d.get_skin().get_pigment().toString());
-		
+				
 		boolean found = false;
 		Random rand = new Random(); 
 		while(!found) {
@@ -125,29 +120,15 @@ public class Name {
 			
 			int num3 = rand.nextInt(LastNames.values().length);
 			
-			int num4 = rand.nextInt(color_names_first.size());
-			
-			color_name = color_names_first.get(num4);
-			
 			String last_name = LastNames.values()[num3].toString();
 
 			ArrayList<String> orig_names = find_best_original_names(d);
 			
-			int num5 = rand.nextInt(orig_names.size());
+			int num4 = rand.nextInt(orig_names.size());
 			
-			String orig_name = orig_names.get(num5);
+			String orig_name = orig_names.get(num4);
 			
-			if (!active_names.contains(color_name + last_name)) {
-				found = true;
-				active_names.add(color_name+last_name);
-				d.rename(color_name, last_name);
-			}
-			else if (!active_names.contains(color_name + vers_name)) {
-				found = true;
-				active_names.add(color_name+vers_name);
-				d.rename(color_name, vers_name);
-			}
-			else if (!active_names.contains(orig_name)) {
+			if (!active_names.contains(orig_name)) {
 				found = true;
 				active_names.add(orig_name.replace("0", ""));
 				d.rename(orig_name.split("0")[0], orig_name.split("0")[1]);
@@ -173,6 +154,7 @@ public class Name {
 			
 			if(!isValidName(d.get_first_name(), d.get_last_name())) {
 				found = false;
+				removeActiveName(d.get_first_name() + d.get_last_name());
 				continue; 
 			}
 			else {
@@ -260,16 +242,20 @@ public class Name {
 			String last_color_name = last_color_names.get(num6);
 			
 			if(!active_names.contains(one_first + two_last) & !tried1) {
-				found = true;
 				tried1 = true; 
-				active_names.add(one_first+two_last);
-				three.rename(one_first, two_last);
+				if (!active_names.contains(one_first + two_last) ) {
+					found = true;
+					active_names.add(one_first+two_last);
+					three.rename(one_first, two_last);
+				}
 			}
 			else if(!active_names.contains(two_first + one_last) & !tried2) {
-				found = true;
 				tried2 = true;
-				active_names.add(two_first + one_last);
-				three.rename(two_first, one_last);
+				if(!active_names.contains(two_first + one_last) ) {
+					active_names.add(two_first + one_last);
+					found = true;
+					three.rename(two_first, one_last);
+				}
 			}
 			else if(!active_names.contains(one_last + two_last) & isVers(one_last) & !tried3) {
 				tried3 = true;
@@ -353,6 +339,16 @@ public class Name {
 				active_names.add(vers_name + two_last);
 				three.rename(vers_name, two_last);
 			}
+			else if (!active_names.contains(first_name + one_last)) {
+				found = true;
+				active_names.add(vers_name + one_last);
+				three.rename(vers_name, one_last);
+			} 
+			else if (!active_names.contains(first_name + two_last)) {
+				found = true;
+				active_names.add(vers_name + two_last);
+				three.rename(vers_name, two_last);
+			}
 			else if (!active_names.contains(orig_name)) {
 				found = true;
 				active_names.add(orig_name.replace("0", ""));
@@ -364,6 +360,7 @@ public class Name {
 			
 			if(!isValidName(three.get_first_name(), three.get_last_name())) {
 				found = false;
+				removeActiveName(three.get_first_name()+three.get_last_name());
 				continue; 
 			}
 			else {
@@ -426,6 +423,10 @@ public class Name {
 		ArrayList<String> stat_name_first = first_name_by_stat(stat_code);
 		ArrayList<String> stat_name_last = last_name_by_stat(stat_code);
 		
+		ArrayList<String> generic_first = array_to_string_list(FirstNames.values());
+		ArrayList<String> generic_last = array_to_string_list(LastNames.values());
+		ArrayList<String> generic_vers = array_to_string_list(VersNames.values());
+		
 		ArrayList<String> color_shade = combine_into_full_names(color_names_first, shade_name_last);
 		ArrayList<String> shade_color = combine_into_full_names(shade_name_first, color_names_last);
 		ArrayList<String> pigm_color = combine_into_full_names(pigm_name_first, color_names_last);
@@ -436,6 +437,24 @@ public class Name {
 		ArrayList<String> stat_stat = combine_into_full_names(stat_name_first, stat_name_last);
 		ArrayList<String> stat_shade = combine_into_full_names(stat_name_first, shade_name_last);
 		
+		ArrayList<String> stat_generic_last = combine_into_full_names(stat_name_first, generic_last);
+		ArrayList<String> generic_first_stat = combine_into_full_names(generic_first, stat_name_last);
+		ArrayList<String> stat_generic_vers = combine_into_full_names(stat_name_first, generic_vers);
+		ArrayList<String> generic_vers_stat = combine_into_full_names(generic_vers, stat_name_last);
+		
+		ArrayList<String> color_generic_last = combine_into_full_names(color_names_first, generic_last);
+		ArrayList<String> generic_first_color = combine_into_full_names(generic_first, color_names_last);
+		ArrayList<String> color_generic_vers = combine_into_full_names(color_names_first, generic_vers);
+		ArrayList<String> generic_vers_color = combine_into_full_names(generic_vers, color_names_last);
+		
+		ArrayList<String> shade_generic_last = combine_into_full_names(shade_name_first, generic_last);
+		ArrayList<String> generic_first_shade = combine_into_full_names(generic_first, shade_name_last);
+		ArrayList<String> shade_generic_vers = combine_into_full_names(shade_name_first, generic_vers);
+		ArrayList<String> generic_vers_shade = combine_into_full_names(generic_vers, shade_name_last);
+		
+		ArrayList<String> pigm_generic_last = combine_into_full_names(pigm_name_first, generic_last);
+		ArrayList<String> pigm_generic_vers = combine_into_full_names(pigm_name_first, generic_vers);
+		
 		best_names.addAll(color_shade);
 		best_names.addAll(shade_color);
 		best_names.addAll(pigm_color);
@@ -445,8 +464,36 @@ public class Name {
 		best_names.addAll(stat_stat);
 		best_names.addAll(pigm_stat);
 		best_names.addAll(stat_shade);
+		best_names.addAll(stat_generic_last);
+		best_names.addAll(generic_first_stat);
+		best_names.addAll(stat_generic_vers);
+		best_names.addAll(generic_vers_stat);
+		best_names.addAll(color_generic_last);
+		best_names.addAll(generic_first_color);
+		best_names.addAll(color_generic_vers);
+		best_names.addAll(generic_vers_color);
+		best_names.addAll(shade_generic_last);
+		best_names.addAll(generic_first_shade);
+		best_names.addAll(shade_generic_vers);
+		best_names.addAll(generic_vers_shade);
+		best_names.addAll(pigm_generic_last);
+		best_names.addAll(pigm_generic_vers);
 		
 		return best_names; 
+		
+	}
+	
+	private static <T> ArrayList<String> array_to_string_list(@SuppressWarnings("rawtypes") Enum<? extends Enum>[] names) {
+		
+		ArrayList<String> new_list = new ArrayList<String>();
+		
+		for (@SuppressWarnings("rawtypes") Enum<? extends Enum> n: names) {
+			
+			new_list.add(n.toString());
+			
+		}
+		
+		return new_list;
 		
 	}
 	
@@ -498,12 +545,19 @@ public class Name {
 				better_names.add("Ocean");
 				better_names.add("Sky");
 				better_names.add("River");
+				better_names.add("Wave");
+				better_names.add("Tide");
+				better_names.add("Shell");
 				break;
 			case "Purple":
 				better_names.add("Dusk");
 				better_names.add("Dawn");
 				better_names.add("Storm");
 				better_names.add("Thunder");
+				better_names.add("Tempest");
+				better_names.add("Lightning");
+				better_names.add("Wind");
+				better_names.add("Mist");
 				break;
 			case "Red":
 				better_names.add("Blood");
@@ -522,6 +576,9 @@ public class Name {
 				better_names.add("Black");
 				better_names.add("Dark");
 				better_names.add("Onyx");
+				better_names.add("Soot");
+				better_names.add("Coal");
+				better_names.add("Star");
 				break;
 			case "White":
 				better_names.add("Ivory");
@@ -537,11 +594,14 @@ public class Name {
 				break;
 			case "Gray":
 				better_names.add("Silver");
-				better_names.add("Slate");
 				better_names.add("Ash");
 				better_names.add("Storm");
 				better_names.add("Cloud");
 				better_names.add("Stone");
+				better_names.add("Wind");
+				better_names.add("Mist");
+				better_names.add("Cinder");
+				better_names.add("Smoke");
 				break;
 			case "Green":
 				better_names.add("Jade");
@@ -586,12 +646,19 @@ public class Name {
 				better_names.add("Sky");
 				better_names.add("River");
 				better_names.add("Stream");
+				better_names.add("Wave");
+				better_names.add("Tide");
+				better_names.add("Shell");
 				break;
 			case "Purple":
 				better_names.add("Dusk");
 				better_names.add("Dawn");
 				better_names.add("Storm");
 				better_names.add("Thunder");
+				better_names.add("Tempest");
+				better_names.add("Wind");
+				better_names.add("Mist");
+				better_names.add("Lightning");
 				break;
 			case "Red":
 				better_names.add("Blood");
@@ -606,10 +673,9 @@ public class Name {
 				better_names.add("Night");
 				better_names.add("Onyx");
 				better_names.add("Smoke");
+				better_names.add("Star");
 				break;
 			case "White":
-				better_names.add("Ivory");
-				better_names.add("Silver");
 				better_names.add("Ice");
 				better_names.add("Snow");
 				better_names.add("Frost");
@@ -618,12 +684,11 @@ public class Name {
 				better_names.add("Winter");
 				break;
 			case "Gray":
-				better_names.add("Silver");
-				better_names.add("Slate");
-				better_names.add("Ash");
 				better_names.add("Storm");
 				better_names.add("Cloud");
 				better_names.add("Stone");
+				better_names.add("Wind");
+				better_names.add("Mist");
 				break;
 			case "Green":
 				better_names.add("Jade");
@@ -700,6 +765,7 @@ public class Name {
 		switch(code) {
 		case 1:
 			better_names.add("Strong");
+			better_names.add("Sharp");
 			better_names.add("Fierce");
 			better_names.add("Burning");
 			better_names.add("Striking");
@@ -756,6 +822,7 @@ public class Name {
 			better_names.add("Fang");
 			better_names.add("Claw");
 			better_names.add("Talon");
+			better_names.add("Hunter");
 			break;
 		case 2:
 			better_names.add("Stone");
@@ -770,17 +837,20 @@ public class Name {
 			better_names.add("Streak");
 			better_names.add("Flight");
 			better_names.add("Dance");
+			better_names.add("Dancer");
 			better_names.add("Wing");
 			better_names.add("Chaser");
 			better_names.add("Bolt"); 
 			better_names.add("Lightning");
+			better_names.add("Weaver");
 			break; 
 		case 4: 
-			better_names.add("Charge"); 
-			better_names.add("Bolt"); 
+			better_names.add("Charger");  
 			better_names.add("Chaser");
 			better_names.add("Strike");
 			better_names.add("Scorch");
+			better_names.add("Stalker");
+			better_names.add("Roar");
 			break;
 		case 5: 
 			better_names.add("Spirit");

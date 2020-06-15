@@ -67,7 +67,7 @@ public class Dragon extends Creature {
 			male_pop++;
 		}
 		
-		if(season_limit == 0) {
+		if(season_limit <= 0) {
 			season_limit = 1;
 		}
 		
@@ -161,6 +161,10 @@ public class Dragon extends Creature {
 		else {
 			season_limit = 144;
 			male_pop++;
+		}
+		
+		if(season_limit <= 0) {
+			season_limit = 1;
 		}
 		
 		//season_limit = new Random().nextInt(18) + 1; 
@@ -277,8 +281,8 @@ public class Dragon extends Creature {
 			season_limit = 144;
 		}
 		
-		if(season_limit == 0) {
-			season_limit = 1; 
+		if(season_limit <= 0) {
+			season_limit = 1;
 		}
 		
 		skin = new Skin(one.skin, two.skin);
@@ -726,13 +730,13 @@ public class Dragon extends Creature {
 			}
 			else {
 				hunger += 7;
-				System.out.println(name + " finds nothing to eat, so they chew on some old bones.");
+				//System.out.println(name + " finds nothing to eat, so they chew on some old bones.");
 				//current_region.deplete_resource(Resources.PREY_FOOD, 2);
 			}
 		}
 		else {
 			hunger += 35; 
-			System.out.println(name + " finds a prey carcass to gnaw on.");
+			//System.out.println(name + " finds a prey carcass to gnaw on.");
 			//current_region.deplete_resource(Resources.PREY_FOOD, 5);
 		}
 		

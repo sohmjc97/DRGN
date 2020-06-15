@@ -58,8 +58,8 @@ public class Predator extends Creature {
 			male_pop++;
 		}
 		
-		if(season_limit == 0) {
-			season_limit = 1; 
+		if(season_limit <= 0) {
+			season_limit = 1;
 		}
 		
 		skin = new_skin;
@@ -383,7 +383,7 @@ public class Predator extends Creature {
 		Dragon d = choose_prey();
 		
 		if(d == null) {
-			System.out.println(name + " could find no dragons to hunt.");
+			//System.out.println(name + " could find no dragons to hunt.");
 			hunger = hunger - 10; 
 			stamina = stamina - 10;
 			thirst = thirst - 10; 
@@ -577,7 +577,7 @@ public class Predator extends Creature {
 		}
 		else {
 			hunger += 50; 
-			System.out.println(name + " finds an old carcass to gnaw on.");
+			//System.out.println(name + " finds an old carcass to gnaw on.");
 			//current_region.deplete_resource(Resources.PREY_FOOD, 5);
 		}
 		
