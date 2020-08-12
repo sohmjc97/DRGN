@@ -1,6 +1,10 @@
 package application;
 
+import java.util.HashMap;
+
 import application.Creature.Gender;
+import application.SkillTree.Branch;
+import application.SkillTree.Leaf;
 import application.Skin.COLORS;
 import application.Skin.PIGMENTS;
 import application.Skin.SHADES;
@@ -11,7 +15,10 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -69,6 +76,119 @@ public class PopUpBox {
 		
 		return new_name;
 		
+	}
+	
+	public void manage_skills(Dragon dude) {
+		Stage alertWindow = new Stage(); 
+		window = alertWindow;
+		alertWindow.initModality(Modality.APPLICATION_MODAL);
+		alertWindow.setTitle("Skill Manager");
+		alertWindow.setMinWidth(400);
+		//alertWindow.setMaxHeight(600);
+		//alertWindow.setMaxWidth(400);
+		
+		BorderPane layout = new BorderPane();
+		layout.setPadding(new Insets(10, 10, 10, 10));
+		
+		HBox top = new HBox(20);
+		top.setPadding(new Insets(10, 10, 10, 10));
+		top.setAlignment(Pos.CENTER);
+		//middle.setMaxWidth(400);
+		Label msg = new Label("Available Points: " + dude.getSkills().getAvailablePoints());
+		msg.getStyleClass().add("wrappable");
+		top.getChildren().add(msg);
+		
+		HBox middle = new HBox(10);
+		middle.setPadding(new Insets(10, 10, 10, 10));
+		middle.setAlignment(Pos.CENTER);
+		SkillTree tree = new SkillTree(dude);
+		HashMap<Leaf, Button> links = new HashMap<Leaf, Button>();
+		HashMap<Leaf, Tooltip> tools = new HashMap<Leaf, Tooltip>();
+		HashMap<Button, SplitPane> wrappers = new HashMap<Button, SplitPane>();
+		for (Branch b : tree.getBranches()) {
+			VBox b1 = new VBox(10);
+			b1.setAlignment(Pos.CENTER);
+			for (Leaf f: b.getLeafs()) {
+				Button button = new Button(f.getLeafName() + " " + dude.getSkills().getPointsBySkill(f.getLeafName()) + " / " + f.pointsToMaster());
+				SplitPane wrapper = new SplitPane(button);
+				wrappers.put(button, wrapper);
+				wrapper.setPadding(new Insets(5,5,5,5));
+				links.put(f, button);
+				Tooltip t = new Tooltip(f.getLeafDescrip());
+				tools.put(f, t);
+				t.setAutoHide(false);
+				Tooltip.install(button, t);
+				if(f.checkUnlocked()) {
+					button.setDisable(false);
+				}
+				else {
+					button.setDisable(true);
+				}
+				if(button.isDisabled()) {
+					String requirements = "";
+					for (Leaf p: f.getBeforeLeafs()) {
+						requirements += p.getLeafName() + " " + p.getLeafPoints() + "/" + f.getUnlockCondition(p) + "\n";
+					}
+					t.setText(f.getLeafDescrip() + "\nRequired: \n" + requirements);
+					wrapper.setTooltip(t);
+				}
+				button.setOnMouseClicked(e -> {
+					if(dude.getSkills().hasPointsToSpend() & !f.mastered()) {
+						f.addPoint();
+						button.setText(f.getLeafName() + " " + dude.getSkills().getPointsBySkill(f.getLeafName()) + " / " + f.pointsToMaster());
+						for(Leaf n: f.getAfterLeafs()) {
+							if(n.checkUnlocked()) {
+								links.get(n).setDisable(false);
+								tools.get(n).setText(n.getLeafDescrip());
+							}
+							else {
+								for(Leaf p: n.getBeforeLeafs()) {
+									if(p.getLeafPoints() < n.getUnlockCondition(p)) {
+										String requirements = "";
+										requirements += p.getLeafName() + " " + p.getLeafPoints() + "/" + n.getUnlockCondition(p) + "\n";
+										tools.get(n).setText(n.getLeafDescrip() + "\nRequired: \n" + requirements);
+										wrappers.get(links.get(n)).setTooltip(tools.get(n));
+									}
+								}
+							}
+						}
+						msg.setText("Available Points: " + dude.getSkills().getAvailablePoints());
+					}
+					else {
+						System.out.println(dude.getSkills().getAvailablePoints() + " points available.");
+					}
+				});
+				b1.getChildren().add(wrapper);
+			}
+			middle.getChildren().add(b1);
+		}
+		
+		ScrollPane scroll = new ScrollPane(); 
+		scroll.setMinSize(400, 600);
+		scroll.setContent(middle);
+		
+		GridPane options = new GridPane();
+		options.setPadding(new Insets(10, 10, 10, 10));
+		options.setHgap(10);
+		options.setAlignment(Pos.CENTER);
+		Button yes = new Button("Continue");
+		GridPane.setConstraints(yes, 0, 0);
+		yes.setOnAction(e -> {
+			//
+			this.close(alertWindow);
+			});
+		Button no = new Button("Cancel");
+		GridPane.setConstraints(no, 1, 0);
+		no.setOnAction(e -> killAlert(alertWindow));
+		options.getChildren().addAll(yes, no);
+		
+		layout.setTop(top);
+		layout.setCenter(scroll);
+		layout.setBottom(options);
+		Scene scene = new Scene(layout);
+		scene.getStylesheets().add("application/application.css");
+		alertWindow.setScene(scene);
+		alertWindow.showAndWait();
 	}
 	
 	public Dragon custom_build (Region region) {

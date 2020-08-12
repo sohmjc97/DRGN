@@ -4,28 +4,30 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
+import application.Creature.Gender;
+
 public class Name {
 
 	public enum FirstNames {
-		Bright,
-		Dark,
+		//Bright,
+		//Dark,
 		Dead,
 		Silent,
-		Wild,
-		Swift,
+		//Wild,
+		//Swift,
 		Lost, 
 		Ragged,
 		Dancing,
 		Fallen,
 		Rising,
-		Winter,
-		Summer,
+		//Winter,
+		//Summer,
 		First,
 		Last,
-		Fleet,
+		//Fleet,
 		Clear,
-		Burning,
-		Frozen
+		//Burning,
+		//Frozen
 	}
 	
 	public enum LastNames {
@@ -99,6 +101,7 @@ public class Name {
 		incompatible_names.put("Black", "Light");
 		incompatible_names.put("Fleet", "Flight");
 		incompatible_names.put("Thunder", "Lightning");
+		incompatible_names.put("Moon", "Shine");
 	}
 	
 	static ArrayList<String> active_names = new ArrayList<String>();
@@ -107,8 +110,11 @@ public class Name {
 	public static void rename(Dragon d) {
 				
 		boolean found = false;
+		int loop_count = 0;
 		Random rand = new Random(); 
-		while(!found) {
+		while(!found & loop_count < 500) {
+			
+			loop_count++;
 			
 			int num1 = rand.nextInt(VersNames.values().length);
 			
@@ -152,7 +158,7 @@ public class Name {
 				continue; 
 			}
 			
-			if(!isValidName(d.get_first_name(), d.get_last_name())) {
+			if(!isValidName(d)) {
 				found = false;
 				removeActiveName(d.get_first_name() + d.get_last_name());
 				continue; 
@@ -164,13 +170,28 @@ public class Name {
 			
 		}
 		
+		if(loop_count > 500 & found == false) {
+			System.out.println("Got stuck in naming loop: active names = " + active_names.size() + ", retired names = " + retired_names.size());
+			found = true;
+			active_names.add("Broken" + "Horn");
+			d.rename("Broken", "Horn");
+		}
+		
+		
 	}
 	
-	private static boolean isValidName(String first, String last) {
-		
+	private static boolean isValidName(Dragon d) {
+		String first = d.get_first_name();
+		String last = d.get_last_name();
 		boolean compatible = true;
 		boolean incompatible = false;
-		if (first.equals(last) | last.equals(first)) {
+		if (d.gender == Gender.MALE & d.get_name().contains("Feather")) {
+			return incompatible;
+		}
+		else if (d.gender == Gender.FEMALE & d.get_name().contains("Horn")) {
+			return incompatible;
+		}
+		else if (first.equals(last) | last.equals(first)) {
 			return incompatible;
 		}
 		else if (retired_names.contains(first+last)) {
@@ -181,11 +202,12 @@ public class Name {
 				return incompatible;
 			}
 		}
-		else if(incompatible_names.get(last) != null) {
+		else if (incompatible_names.get(last) != null) {
 			if(incompatible_names.get(last).equals(first)) {
 				return incompatible;
 			}
 		}
+	
 		return compatible; 
 	}
 	
@@ -198,6 +220,8 @@ public class Name {
 		ArrayList<String> color_names = first_name_by_color(color_name);
 		ArrayList<String> last_color_names = last_name_by_color(color_name);
 		
+		int loop_count = 0;
+		
 		boolean found = false;
 		Random rand = new Random(); 
 		boolean tried1 = false;
@@ -209,7 +233,10 @@ public class Name {
 		boolean tried7 = false;
 		boolean tried8 = false;
 		boolean tried9 = false;
-		while(!found) {
+		while(!found & loop_count < 500) {
+			
+			loop_count++;
+			
 			String one_first = one.get_first_name();
 			String one_last = one.get_last_name();
 			String two_first = two.get_first_name();
@@ -358,7 +385,7 @@ public class Name {
 				continue;
 			}
 			
-			if(!isValidName(three.get_first_name(), three.get_last_name())) {
+			if(!isValidName(three)) {
 				found = false;
 				removeActiveName(three.get_first_name()+three.get_last_name());
 				continue; 
@@ -368,6 +395,14 @@ public class Name {
 			}
 			
 		}
+		
+		if(loop_count > 500 & found == false) {
+			System.out.println("Got stuck in naming loop: active names = " + active_names.size() + ", retired names = " + retired_names.size());
+			found = true;
+			active_names.add("Broken" + "Horn");
+			three.rename("Broken", "Horn");
+		}
+		
 	}
 	
 	private static boolean isVers(String name) {
@@ -479,6 +514,8 @@ public class Name {
 		best_names.addAll(pigm_generic_last);
 		best_names.addAll(pigm_generic_vers);
 		
+		best_names.removeAll(active_names);
+		
 		return best_names; 
 		
 	}
@@ -528,14 +565,15 @@ public class Name {
 				better_names.add("Earth");
 				break;
 			case "Orange":
-			case "Yellow":
-				better_names.add("Sun");
-				better_names.add("Sand");
 				better_names.add("Flame");
 				better_names.add("Ember");
 				better_names.add("Fire");
+			case "Yellow":
+				better_names.add("Sun");
+				better_names.add("Sand");
 				better_names.add("Golden");
-				better_names.add("Lightning");
+				better_names.add("Dune");
+				better_names.add("Desert");
 				break;
 			case "Blue":
 				better_names.add("Azure");
@@ -548,6 +586,7 @@ public class Name {
 				better_names.add("Wave");
 				better_names.add("Tide");
 				better_names.add("Shell");
+				better_names.add("Coral");
 				break;
 			case "Purple":
 				better_names.add("Dusk");
@@ -631,13 +670,14 @@ public class Name {
 				break;
 			case "Orange":
 				better_names.add("Clay");
+				better_names.add("Flame");
+				better_names.add("Ember");
+				better_names.add("Fire");
 			case "Yellow":
 				better_names.add("Sun");
 				better_names.add("Sand");
-				better_names.add("Flame");
-				better_names.add("Ember");
-				better_names.add("Lightning");
-				better_names.add("Fire");
+				better_names.add("Dune");
+				better_names.add("Desert");
 				break;
 			case "Blue":
 				better_names.add("Rain");
@@ -649,6 +689,8 @@ public class Name {
 				better_names.add("Wave");
 				better_names.add("Tide");
 				better_names.add("Shell");
+				better_names.add("Current");
+				better_names.add("Splash");
 				break;
 			case "Purple":
 				better_names.add("Dusk");
@@ -674,6 +716,7 @@ public class Name {
 				better_names.add("Onyx");
 				better_names.add("Smoke");
 				better_names.add("Star");
+				better_names.add("Sky");
 				break;
 			case "White":
 				better_names.add("Ice");
@@ -774,6 +817,7 @@ public class Name {
 		case 2:
 			better_names.add("Tough");
 			better_names.add("Hard");
+			better_names.add("Stone");
 			better_names.add("Solid");
 			better_names.add("Thunder");
 			break;
@@ -783,6 +827,7 @@ public class Name {
 			better_names.add("Rushing");
 			better_names.add("Dancing");
 			better_names.add("Lightning");
+			better_names.add("Whirling");
 			break; 
 		case 4: 
 			better_names.add("Brave");
@@ -790,6 +835,7 @@ public class Name {
 			better_names.add("Rising");
 			better_names.add("Wild");
 			better_names.add("Striking");
+			better_names.add("Raging");
 			break;
 		case 5: 
 			better_names.add("Gentle");
@@ -797,6 +843,7 @@ public class Name {
 			better_names.add("Soft");
 			better_names.add("Fallen");
 			better_names.add("Silent");
+			better_names.add("Splash");
 			break;
 		}
 		
@@ -820,6 +867,7 @@ public class Name {
 		case 1:
 			better_names.add("Strike");
 			better_names.add("Fang");
+			better_names.add("Horn");
 			better_names.add("Claw");
 			better_names.add("Talon");
 			better_names.add("Hunter");
@@ -861,6 +909,7 @@ public class Name {
 			better_names.add("Pool");
 			better_names.add("Rain");
 			better_names.add("Cloud");
+			better_names.add("Splash");
 			break;
 		}
 		

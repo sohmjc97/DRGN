@@ -13,13 +13,7 @@ public class Region {
 
 	private static ArrayList<Region> regions = new ArrayList<Region>();
 	private static int region_count = 0;
-	private static HashMap<Resources, Integer> resource_levels = new HashMap<Resources, Integer>(); 
-	
-	static {
-		for (Resources resource: Resources.values()) {
-			resource_levels.put(resource, 1000);
-		}
-	}
+	private static Region original_region = null;
 	
 	public static enum Resources {
 		PREY_FOOD,
@@ -28,6 +22,7 @@ public class Region {
 	}
 	
 	private final int id;
+	private final boolean original;
 	private final String name;
 	private ArrayList<Region> connecting_regions = new ArrayList<Region>();
 	private Skin environment_skin;
@@ -35,6 +30,8 @@ public class Region {
 	private SHADES env_shade;
 	private PIGMENTS env_pigment; 
 	
+	private HashMap<Resources, Integer> resource_levels = new HashMap<Resources, Integer>(); 
+
 	private ArrayList<Creature> prey_population = new ArrayList<Creature>(); 
 	private ArrayList<Creature> dragon_population = new ArrayList<Creature>(); 
 	private ArrayList<Creature> predator_population = new ArrayList<Creature>();
@@ -44,10 +41,28 @@ public class Region {
 		regions.add(this);
 		region_count++;
 		id = region_count;
+		
+		if(id == 1) {
+			original = true;
+		}
+		else {
+			original = false;
+		}
+		
 		this.name = name; 
+		
+		for (Resources resource: Resources.values()) {
+			resource_levels.put(resource, 1000);
+		}
+		
+		this.randomize_env();
 	}
 	
 	//MEMBER FUNCTIONS
+	
+	public boolean is_original() {
+		return original;
+	}
 	
 	public int get_id() {
 		return id; 
@@ -59,6 +74,14 @@ public class Region {
 	
 	public Skin get_environment_skin() {
 		return environment_skin;
+	}
+	
+	public ArrayList<Creature> get_total_population() {
+		ArrayList<Creature> total_pop = new ArrayList<Creature>();
+		total_pop.addAll(dragon_population);
+		total_pop.addAll(prey_population);
+		total_pop.addAll(predator_population);
+		return total_pop;
 	}
 	
 	public void set_environment_skin(Skin skin) {
@@ -131,7 +154,7 @@ public class Region {
 	}
 	
 	public boolean connect_region(Region adj) {
-		if(connecting_regions.add(adj)) {
+		if(connecting_regions.add(adj) & adj.connecting_regions.add(this)) {
 			return true;
 		}
 		else {
@@ -207,6 +230,21 @@ public class Region {
 		report = report + count + " active viruses.\n";
 		return report; 
 		
+	}
+	
+	public static Region get_original_region() {
+		if (original_region == null) {
+			Region og = null;
+			for (Region i: regions) {
+				if (i.is_original()) {
+					og = i;
+				}
+			}
+			return og;
+		}
+		else {
+			return original_region;
+		}
 	}
 	
 	public void randomize_env() {
@@ -334,19 +372,26 @@ public class Region {
 			spawn_prey();
 		}
 		//System.out.println("Beginning Dragon Simulation...");
-		num = Dragon.season(dragon_population);
-		if(num == 0) {
-			//spawn_dragon(); 
-			while (num < 2 & prey_population.size() > dragon_population.size()*2) {
-				Dragon d = spawn_dragon();
-				//d.age_randomly();
-				num++;
-			}
+		if (!original & dragon_population.size() == 0) {}
+		else if (!original) {
+			 Dragon.season(dragon_population);
 		}
 		else {
-			spawn_dragon(); 
-			//spawn_dragon(); 
+			num = Dragon.season(dragon_population);
+			if(num == 0) {
+				//spawn_dragon(); 
+				while (num < 2 & prey_population.size() > dragon_population.size()*2) {
+					Dragon d = spawn_dragon();
+					//d.age_randomly();
+					num++;
+				}
+			}
+			else {
+				spawn_dragon(); 
+				//spawn_dragon(); 
+			}
 		}
+		System.out.println("Active Names: " + Name.active_names.size() + ", Retired Names: " + Name.retired_names.size());
 		//System.out.println("Beginning Predator Simulation...");
 		num = Predator.season(predator_population);
 		if(num == 0) {
@@ -400,8 +445,12 @@ public class Region {
 	
 	//CLASS FUNCTIONS 
 	
-	static ArrayList<Region> get_regions() {
+	public static ArrayList<Region> get_regions() {
 		return regions; 
+	}
+	
+	public static int get_region_count() {
+		return region_count;
 	}
 	
 }

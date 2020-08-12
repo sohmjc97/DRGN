@@ -23,6 +23,7 @@ public class Prey extends Creature {
 		name = "Prey#" + id; 
 		my_class = Prey.class;
 		this.current_region = current_region; 
+		this.region_of_origin = current_region;
 		int gender_code = current_region.gender_check(current_region.get_prey_population());
 		if (gender_code == 1) {
 			gender = Gender.FEMALE;
@@ -131,6 +132,7 @@ public class Prey extends Creature {
 		name = "Prey#" + id; 
 		my_class = Prey.class;
 		this.current_region = one.current_region; 
+		this.region_of_origin = current_region;
 		parent_one = one; 
 		parent_two = two;
 		int gender_code = current_region.gender_check(current_region.get_prey_population());

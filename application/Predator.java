@@ -21,6 +21,7 @@ public class Predator extends Creature {
 		id = predator_count;
 		name = "Predator#" + id; 
 		this.current_region = current_region; 
+		this.region_of_origin = current_region;
 		my_class = Predator.class;
 		int gender_code = current_region.gender_check(current_region.get_predator_population());
 		if (gender_code == 1) {
@@ -134,6 +135,7 @@ public class Predator extends Creature {
 		name = "Predator#" + id; 
 		my_class = Predator.class;
 		this.current_region = one.current_region; 
+		this.region_of_origin = current_region;
 		parent_one = one; 
 		parent_two = two;
 		int gender_code = current_region.gender_check(current_region.get_predator_population());
@@ -305,10 +307,12 @@ public class Predator extends Creature {
 					}
 				}
 				else {
+					double p_stats = p.attack + p.defense + p.speed;
+					double m_stats = attack + defense + speed;
 					if (p.isVisiblyIll) {
 						easy_prey.add(p);
 					}
-					else if (p.get_stat_coeff() < this.get_stat_coeff()) {
+					else if (p_stats < m_stats) {
 						easy_prey.add(p);
 					}
 					else if (p.isMinor() & !p.isWellProtected()) {
@@ -475,12 +479,21 @@ public class Predator extends Creature {
 		chance += attack - d.defense; 
 		chance += speed - d.speed;
 		
-		if(d.isAdult() & this.isAdult()) {
+		
+		if (d.isMinor()) {
+			d.be_defended(this);
+		}
+		
+		if(d.isDead | this.isDead | this.isSatisfied() | (!isHealthy() & aggression < 0.5)) {
+			return; 
+		}
+		
+		if(d.get_stage() == this.get_stage()) {
 			if(d.get_aggression() > 0.5 & d.attack > this.defense_growth) {
 				System.out.println(d.get_name() + " attempts to defend themselves against (" + get_stage() + ") " + name);
 				d.fight(this);
 				if(d.isDead & !this.isDead) {
-					System.out.println(name + " caught and ate (" + d.get_stage() + ") " + d.get_name());
+					//System.out.println(name + " caught and ate (" + d.get_stage() + ") " + d.get_name());
 					hunger = 100; 
 					experience++; 
 				}
@@ -495,11 +508,8 @@ public class Predator extends Creature {
 				}
 			}
 		}
-		else if (d.isMinor()) {
-			d.be_defended(this);
-		}
 		
-		if(this.isDead | this.isSatisfied()) {
+		if(d.isDead | this.isDead | this.isSatisfied() | (!isHealthy() & aggression < 0.5)) {
 			return; 
 		}
 		
@@ -521,6 +531,7 @@ public class Predator extends Creature {
 				System.out.println(name + " gave up on hunting (" + d.get_stage() + ") " + d.get_name());
 			}
 		}
+		experience++;
 		stamina = stamina - 20;
 		thirst = thirst - 20; 
 		grow(); 

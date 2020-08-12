@@ -11,15 +11,10 @@ import application.Region.Resources;
 public abstract class Creature {
 	
 	/*
-	 * Will include Prey and Apex 
 	 * Ideas:
-	 * Should the number of eggs laid depend on how available resources are?
-	 * Work on egg mechanics/incubation
-	 * Should number of eggs laid be an inheritable/mutable trait?
-	 * Should sociability be a genetic factor? High sociability meaning bonding to others and caring (hunting, defending) for them?
-	 * Should a creature keep track of its partners and care for them when they can't (sick, injured, etc)?
-	 * Should males even have a season limit?
-	 * See if there is a way to make matches lay eggs when they match instead of after / maybe based on aggression?
+	 * ---
+	 * Should highly aggressive male dragons try to kill the eggs/hatchlings of rival males?
+	 * Or maybe the adolescent male children of rival males?
 	 */
 	
 	protected static ArrayList<Creature> population = new ArrayList<Creature>();
@@ -50,9 +45,10 @@ public abstract class Creature {
 	protected int id;
 	protected Gender gender;
 	protected Skin skin; 
+	protected Region region_of_origin;
 	protected Region current_region; 
 	protected Stage stage = Stage.EGG;
-	protected Class my_class = null;
+	protected Class<? extends Creature> my_class = null;
 	protected boolean famine; 
 	protected boolean hasGrown = false; 
 	
@@ -144,8 +140,8 @@ public abstract class Creature {
 				break; 
 			}
 			
-			if(famine) {
-				//migrate();
+			if(famine & stage != Stage.EGG & stage != Stage.HATCHLING & !hasUnhatchedEggs() & !hasHatchlings() & (isHealthy() | aggression > 0.6)) {
+				migrate();
 			}
 			
 			current_region.replenish_resource(Resources.PREY_FOOD, 1);
@@ -208,11 +204,11 @@ public abstract class Creature {
 				new_season = true;
 			}
 			
-			if(famine) {
+			if(famine & stage != Stage.EGG & stage != Stage.HATCHLING & !hasUnhatchedEggs() & !hasHatchlings()) {
 				Random rand = new Random();
 				Double chance = rand.nextInt(101) + aggression*10;
-				if (chance > 60) {
-					//migrate();
+				if (chance > 60 & (isHealthy() | aggression > 0.6)) {
+					migrate();
 					famine = false; 
 				}
 			}
@@ -250,24 +246,54 @@ public abstract class Creature {
 	protected void migrate() {
 		
 		Random rand = new Random();
-		
+		Region new_region = null;
 		if(current_region.get_connecting_regions().size() != 0) {
-			int seed = rand.nextInt(current_region.get_connecting_regions().size());
-			if(current_region.get_connecting_regions().size() == 2) {
-				for(Region r: current_region.get_connecting_regions()) {
-					if (r != current_region) {
-						this.set_current_region(r);
+			boolean found = false; 
+			while (found == false) {
+				int seed = rand.nextInt(current_region.get_connecting_regions().size());
+				if (Region.get_original_region().get_connecting_regions().size() < 3) {
+					int flip = rand.nextInt(5);
+					if(flip == 0) {
+						new_region = new Region("Region" + (Region.get_region_count()+1));
+						new_region.connect_region(current_region);
+						if (current_region != Region.get_original_region()) {
+							new_region.connect_region(Region.get_original_region());
+						}
+						Main.regions.add(new_region);
+						Main.update_top();
+						this.set_current_region(new_region);
+					}
+					else {
+						new_region = current_region.get_connecting_regions().get(seed);
 					}
 				}
-			}
-			else {
-				this.set_current_region(current_region.get_connecting_regions().get(seed));
+				else {
+					new_region = current_region.get_connecting_regions().get(seed);
+					//this.set_current_region(current_region.get_connecting_regions().get(seed));
+				}
+				
+				if(current_region != new_region) {
+					this.set_current_region(new_region);
+					found = true;
+				}
+				
 			}
 		}
 		else {
-			Region new_region = new Region("FarawayRegion");
+			new_region = new Region("Region" + (Region.get_region_count()+1));
+			new_region.connect_region(current_region);
+			if (current_region != Region.get_original_region()) {
+				new_region.connect_region(Region.get_original_region());
+			}
 			Main.regions.add(new_region);
+			Main.update_top();
 			this.set_current_region(new_region);
+		}		
+		
+		for(Creature c: offspring) {
+			if(!c.isDead & c.stage == Stage.ADOLESCENT) {
+				c.set_current_region(new_region);
+			}
 		}
 		
 	}
@@ -328,9 +354,10 @@ public abstract class Creature {
 		String spd = round_decimal(speed);
 		String spd_growth = round_decimal(speed_growth);
 		
-		stats +=  "Dragon ID: " + name + "\n"
+		stats +=  "ID: " + name + "\n"
 				+ "Gender: " + gender + "\n"
 				+ "Skin: " + skin.describe()
+				+ "Origin: " + region_of_origin.get_name() + "\n"
 				+ "Growth(/" + life_span + "): " + stage + " / " + growth + "\n" 
 				+ "Parents: " + parents + "\n"
 				+ "Ancestors: " + ancestry + "\n" 
@@ -354,6 +381,57 @@ public abstract class Creature {
 		return stats;
 	}
 	
+	protected void interact(Creature two) {
+		
+		//what happens when two dragons cross paths on a regular day
+		if (this.isVisiblyIll | two.isVisiblyIll) {
+			
+		}
+		else if (isMinor() & two.isMinor()) {
+			if(stage == Stage.EGG | two.stage == Stage.EGG) {
+				//nothing 
+			}
+			else if (stage == Stage.HATCHLING | two.stage == Stage.HATCHLING) {
+				play(two);
+			}
+			else {
+				play_fight(two);
+			}
+		}
+		else if (isMinor() | two.isMinor()) {
+			if (isMinor()) {
+				//two is adult, this is minor 
+				if (two.get_immediate_family(current_region.get_kin_population(two)).contains(this)) {
+					//two is adult related to minor this
+				}
+				else {
+					if (two.gender == Gender.MALE & this.gender == Gender.MALE) {
+						//two is adult male unrelated to male minor this
+						if (two.aggression > 0.8) {
+							this.be_defended(two);
+							//if (!two.isDead &)
+							two.fight(this);
+						}
+					}
+				}
+			}
+			else {
+				//this is adult
+				if(this.gender == Gender.MALE) {
+					
+				}
+				else {
+					
+				}
+			}
+		}
+		else {
+			//both are adults
+			
+		}
+		
+	}
+	
 	protected boolean check_infections() {
 		//return true if killed
 		ArrayList<Virus> recovered = new ArrayList<Virus>();
@@ -369,7 +447,7 @@ public abstract class Creature {
 			else {
 				current_hp = current_hp - max_hp*v.get_death();
 				if (current_hp <= 0) {
-					System.out.println(this.name + " succumbed to disease.");
+					//System.out.println(this.name + " succumbed to disease.");
 					return true;
 				}
 			}
@@ -431,9 +509,43 @@ public abstract class Creature {
 	
 	protected void eat(Creature d) {
 		
-		System.out.println(name + " caught and ate (" + d.get_stage().toString() + ") " + d.get_name());
+		Random rand = new Random();
+		int challenger_index = rand.nextInt(current_region.get_kin_population(this).size());
+		if(challenger_index <= 0) {
+			challenger_index = 0;
+		}
+		Creature challenger = current_region.get_kin_population(this).get(challenger_index);
+		if (challenger != this & !challenger.isDead() & challenger.stage == this.stage & !challenger.isSatisfied() & challenger.aggression > 0.5
+			& (this.isHealthy() | this.aggression > 0.5) & !isDead & !isSatisfied() & !shareKids(challenger)) {
+			Creature winner = null;
+			if (isMinor()) {
+				winner = play_fight(challenger);
+			}
+			else {
+				winner = fight(challenger);
+			}
+			if(challenger == winner) {
+				System.out.println(challenger.get_name() + " stole the kill from " + this.name);
+				challenger.eat(d);
+				return;
+			}
+			else {
+				System.out.println(this.name + " defended the kill from " + challenger.name);
+			}
+		}
+		else if (this.isDead) {
+			return;
+		}
+		else if ((!this.isHealthy() | this.aggression <= 0.5 | isSatisfied()) & this.stage == challenger.stage & challenger != this & !challenger.isDead()) {
+			System.out.println(this.name + " surrenders the kill to " + challenger.name);
+			challenger.eat(d);
+			return;
+		}
+		
+		System.out.println(name + " ate (" + d.get_stage().toString() + ") " + d.get_name());
 		
 		if (stage == Stage.ADULT | stage == Stage.ELDER) {
+			
 			int share = 0;
 			if (d.isAdult() | d.stage == Stage.ELDER) {
 				share = 200;
@@ -465,7 +577,9 @@ public abstract class Creature {
 						child.hunger += kids_share;
 					}
 				}
-				this.hunger += leftover;
+				if (this.hunger < 300) {
+					this.hunger += leftover;
+				}
 			}
 			
 		}
@@ -505,7 +619,7 @@ public abstract class Creature {
 	protected boolean isSatisfied() {
 		
 		for (Creature c: this.offspring) {
-			if (!c.isSatisfied() & c.isMinor()) {
+			if (!c.isSatisfied() & c.isMinor() & !c.isDead) {
 				return false; 
 			}
 		}
@@ -519,13 +633,29 @@ public abstract class Creature {
 		
 	}
 	
+	protected boolean shareKids(Creature m) {
+
+		for (Creature c: offspring) {
+			if (!c.isDead & c.isMinor()) {
+				for (Creature d: m.offspring) {
+					if(!d.isDead & d.isMinor() & d == c) {
+						return true;
+					}
+				}
+			}
+		}
+		
+		return false;
+		
+	}
+	
 	protected void drink() {
 		
 		//System.out.println(name + " takes a drink.");
 		//heal();
 		
 		Random rand = new Random();
-		if(rand.nextInt(100) < 5) {
+		if(rand.nextInt(100) < 1) {
 			Virus.manual_infect(this);
 		}
 		
@@ -553,7 +683,7 @@ public abstract class Creature {
 		//their parents will attempt to protect them from predators, if they are alive, healthy, and aggressive & by chance and number of minor children
 		Random rand = new Random();
 		if(parent_one != null & parent_two != null) {
-			if(!this.parent_one.isDead()) {
+			if(!this.parent_one.isDead() & this.parent_one.get_current_region() == this.get_current_region()) {
 				
 				if(this.parent_one.isHealthy() | parent_one.aggression >= 0.5) {
 					
@@ -567,9 +697,12 @@ public abstract class Creature {
 					
 					if(chance >= seed) {
 						System.out.println(name + "'s parent " + parent_one.get_name() + " defends its (" + this.get_stage() + ") child against (" + attacker.get_stage() + ") " + attacker.get_name() );
-						parent_one.fight(attacker);
-						if(parent_one.isDead) {
+						Creature winner = parent_one.fight(attacker);
+						if(parent_one.isDead | winner == attacker) {
 							attacker.eat(parent_one);
+						}
+						else if (attacker.isDead) {
+							return;
 						}
 					}
 					
@@ -579,7 +712,7 @@ public abstract class Creature {
 			if (attacker.isDead() | (!attacker.isHealthy() & attacker.get_aggression() < 0.5) | attacker.isSatisfied()) {
 				return;
 			}
-			else if(!this.parent_two.isDead()) {
+			else if(!this.parent_two.isDead() & this.parent_two.get_current_region() == this.get_current_region()) {
 				if(this.parent_two.isHealthy() | parent_two.aggression >= 0.5) {
 					
 					int seed = rand.nextInt(100);
@@ -861,6 +994,7 @@ public abstract class Creature {
 	}
 	
 	protected void check_status() {
+		String outcome = "";
 		if (current_hp > 0 & stamina > 0 & hunger > 0 & thirst > 0) {
 			//dragon lives
 			if (growth > life_span) {
@@ -871,26 +1005,26 @@ public abstract class Creature {
 					for (Virus e: infections) {
 						e.remove_infected(this, false);
 					}
-					System.out.println(name + " dies of old age.");
+					outcome = name + " dies of old age.";
 					die(); 
 					return;
 				}
 			}
 		}
 		else if (stamina <= 0) {
-			System.out.println(name + " drops dead from exhaustion.");
+			outcome = name + " drops dead from exhaustion.";
 			die();
 		}
 		else if (hunger <= 0) {
-			System.out.println(name + " starves to death.");
+			outcome = name + " starves to death.";
 			die();
 		}
 		else if (thirst <= 0) {
-			System.out.println(name + " dies from dehydration.");
+			outcome = name + " dies from dehydration.";
 			die();
 		}
 		else if (current_hp <= 0) {
-			System.out.println(name + " succumbs to injury/illness.");
+			outcome = name + " succumbs to injury/illness.";
 			die();
 		}
 		
@@ -900,6 +1034,10 @@ public abstract class Creature {
 			}
 			this.infections.clear();
 			die();
+		}
+		
+		if(isDead & my_class != Prey.class & !outcome.equals("")) {
+			System.out.println(outcome);
 		}
 		
 	}
@@ -937,15 +1075,7 @@ public abstract class Creature {
 		isDead = true;
 		current_hp = 0; 
 		population.remove(this);
-		if(Prey.class.isInstance(this)) {
-			current_region.get_prey_population().remove(this);
-		}
-		else if (Dragon.class.isInstance(this)) {
-			current_region.get_dragon_population().remove(this);
-		}
-		else if (Predator.class.isInstance(this)){
-			current_region.get_predator_population().remove(this);
-		}
+		current_region.get_kin_population(this).remove(this);
 		current_region.replenish_resource(Resources.PREY_FOOD, (int)(this.growth));
 	}
 	
@@ -954,30 +1084,30 @@ public abstract class Creature {
 		int chance = 0; 
 		if(isMinor()) {
 			if(parent_one != null) {
-				if(!parent_one.isDead & (parent_one.isHealthy() | parent_one.aggression > 0.5)) {
-					chance +=50;
+				if(!parent_one.isDead & (parent_one.isHealthy() | parent_one.aggression > 0.5) & parent_one.current_region == this.current_region) {
+					chance += 99;
 					for (Creature p: parent_one.get_offspring()) {
 						
 						if(p.isMinor() & !p.isDead & p != this) {
-							chance = chance - 2;
+							chance = chance - 3;
 						}
 					}
 				}
 			}
 			if(parent_two != null) {
-				if(!parent_two.isDead & (parent_two.isHealthy() | parent_two.aggression > 0.5)) {
-					chance += 50;
+				if(!parent_two.isDead & (parent_two.isHealthy() | parent_two.aggression > 0.5) & parent_two.current_region == this.current_region) {
+					chance += 99;
 					for (Creature p: parent_two.get_offspring()) {
 						
 						if(p.isMinor() & !p.isDead & p != this) {
-							chance = chance - 2;
+							chance = chance - 3;
 						}
 					}
 				}
 			}
 		}
 		
-		if(chance >= 40) {
+		if(chance >= 100) {
 			return true;
 		}
 		else {
@@ -1031,6 +1161,28 @@ public abstract class Creature {
 		else {
 			return false;
 		}
+	}
+	
+	protected boolean hasNoChildren() {
+		return this.offspring.isEmpty();
+	}
+	
+	protected boolean hasUnhatchedEggs() {
+		for(Creature c: offspring) {
+			if(c.stage == Stage.EGG & !c.isDead) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	protected boolean hasHatchlings() {
+		for(Creature c: offspring) {
+			if(c.stage == Stage.HATCHLING & !c.isDead) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	protected boolean isRelated(Creature two) {
@@ -1170,7 +1322,7 @@ public abstract class Creature {
 		ArrayList<Creature> potential = new ArrayList<Creature>(); 
 		
 		for (Creature d: current_region.get_kin_population(this)) {
-			if (this.isAdult()) {
+			if (this.isAdult() & d.isAdult() & !d.isDead & d.stage != Stage.ELDER & this.stage != Stage.ELDER) {
 				if (!this.isRelated(d) & !this.get_immediate_family(current_region.get_kin_population(this)).contains(d) & this.get_gender() != d.get_gender()) {
 					potential.add(d);
 				}
@@ -1192,7 +1344,7 @@ public abstract class Creature {
 			rating+=1;
 		}
 		else {
-			rating = rating-1; 
+			rating = rating-5; 
 		}
 		return rating;
 	}
@@ -1318,7 +1470,15 @@ public abstract class Creature {
 		current_region.get_kin_population(this).remove(this);
 		this.current_region = new_region; 
 		current_region.get_kin_population(this).add(this);
-		System.out.println(name + " has migrated to " + current_region.get_name());
+		if (my_class == Dragon.class) {
+			System.out.println(name + " has migrated to " + current_region.get_name());
+		}
+		stamina = stamina - 30;
+		hunger = hunger - 10;
+		thirst = thirst - 10;
+		grow();
+		check_status();
+		
 	}
 	
 	protected Region get_current_region() {
@@ -1511,11 +1671,6 @@ public abstract class Creature {
 	}
 	
 	public static int season(ArrayList<Creature> pop) {
-		String kind = "Creature";
-		if(pop.size() != 0) {
-			kind = pop.get(0).my_class.toString();
-			//System.out.println("Beginning season for " + kind);
-		}
 		
 		HashMap<Creature, Integer> wins = new HashMap<Creature, Integer>(); 
 		HashMap<Creature, Integer> losses = new HashMap<Creature, Integer>(); 
@@ -1623,7 +1778,7 @@ public abstract class Creature {
 					}
 					else if (m.isVisiblyIll()) {
 						//System.out.println(m.get_name() + " was avoided because they looked ill.");
-						break;
+						continue;
 					}
 					else if (!m.isHealthy() & m.get_aggression() < 0.5) {
 						//System.out.println(m.get_name() + " was unwell but approached boldly anyway.");
@@ -1633,14 +1788,17 @@ public abstract class Creature {
 						//System.out.println(d.get_name() + " was unwell but approached boldly anyway.");
 						break;
 					}
-					else if (d.reachedSeasonLimit() | m.reachedSeasonLimit()) {
+					else if (d.reachedSeasonLimit()) {
 						//System.out.println("One of them had reached their goal, so nothing happened.");
 						break; 
+					}
+					else if (m.reachedSeasonLimit()) {
+						continue;
 					}
 					else if (
 							d.get_gender() == m.get_gender()
 							& 
-							(!d.get_immediate_family(population).contains(m) & !m.get_immediate_family(population).contains(d))
+							(!d.get_immediate_family(pop).contains(m) & !m.get_immediate_family(pop).contains(d))
 							&
 							!(d.find_potential().isEmpty() | m.find_potential().isEmpty()))
 							{
@@ -1731,12 +1889,19 @@ public abstract class Creature {
 					}
 				}
 			}
+			
 		}
+		
+		for (Creature d: challengers) {
+			if(d.growth >= 25 & d.hasNoChildren() & d.isHealthy()) {
+				System.out.println("Unable to find a mate, " + d.name + " has decided to move on.");
+				d.migrate();
+			}
+		}
+		
 		int num_babies = babies.size();
 		System.out.println(num_babies + " eggs were laid.");
 		babies.clear();
-		
-		//System.out.println("Season ends.");
 		
 		return num_babies;
 		

@@ -19,3 +19,14 @@
 /Skin.class
 /Statistics.class
 /Virus.class
+/DNA.class
+/DNA$Immune_Genes.class
+/DNA$Longevity_Genes.class
+/Skills.class
+/Skills$Moves.class
+/Skills$Traits.class
+/SkillTree.class
+/SkillTree$Branch.class
+/SkillTree$Classes.class
+/SkillTree$Leaf.class
+/Skills$Evo_Traits.class
